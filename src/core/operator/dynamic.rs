@@ -1,37 +1,30 @@
 use super::Op;
-use crate::core::is_map::IsAddMap;
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
 use crate::core::Relation;
 use crate::core::Step;
-use std::collections::HashMap;
 
-pub struct DynOp<D, R>(Box<dyn DOp<D = D, R = R>>);
+pub struct DynOp<D, R>(Box<dyn DynOpT<D = D, R = R>>);
 
-trait DOp {
+trait DynOpT {
     type D: Key;
     type R: Monoid;
-    fn flow_to(&mut self, step: Step) -> HashMap<Self::D, Self::R>;
+    fn flow_dyn<'a>(&mut self, step: Step, send: Box<dyn FnMut(Self::D, Self::R) + 'a>);
 }
 
-impl<T: Op> DOp for T {
+impl<T: Op> DynOpT for T {
     type D = <T as Op>::D;
     type R = <T as Op>::R;
-    fn flow_to(&mut self, step: Step) -> HashMap<Self::D, Self::R> {
-        let mut res = HashMap::new();
-        self.flow(step, |x, r| res.add(x, r));
-        res
+    fn flow_dyn<'a>(&mut self, step: Step, send: Box<dyn FnMut(Self::D, Self::R) + 'a>) {
+        self.flow(step, send)
     }
 }
 
 impl<D: Key, R: Monoid> Op for DynOp<D, R> {
     type D = D;
     type R = R;
-    fn flow<F: FnMut(D, R)>(&mut self, step: Step, mut send: F) {
-        let res = self.0.flow_to(step);
-        for (x, r) in res {
-            send(x, r)
-        }
+    fn flow<F: FnMut(D, R)>(&mut self, step: Step, send: F) {
+        self.0.flow_dyn(step, Box::new(send))
     }
 }
 
