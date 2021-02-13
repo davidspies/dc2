@@ -1,12 +1,10 @@
 use super::{CWrapper, ContextId, CreationContext, ExecutionContext, Step};
 use crate::is_map::IsAddMap;
-use crate::key::Key;
-use crate::monoid::Monoid;
-use crate::operator::{Operator, TCollection};
+use crate::operator::{Operator, WCollection};
 use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
 
-pub struct Arrangement<D, R, C = TCollection<D, R>> {
+pub struct Arrangement<D, R, C = WCollection<D, R>> {
     inner: RefCell<ArrangementInner<D, R, C>>,
     context_id: ContextId,
 }
@@ -27,7 +25,7 @@ struct ArrangementInner<D, R, C> {
     step: Step,
 }
 
-impl<D: Key, R: Monoid, C: Operator<D = D, R = R>> ArrangementInner<D, R, C> {
+impl<C: Operator> ArrangementInner<C::D, C::R, C> {
     fn flow<'a>(&'a mut self, step: Step) {
         let ArrangementInner {
             ref mut from,
@@ -40,7 +38,7 @@ impl<D: Key, R: Monoid, C: Operator<D = D, R = R>> ArrangementInner<D, R, C> {
 }
 
 impl<C: Operator> CWrapper<C> {
-    pub fn get_arrangement(self, context: &CreationContext) -> Arrangement<C::D, C::R, C> {
+    pub fn get_c_arrangement(self, context: &CreationContext) -> Arrangement<C::D, C::R, C> {
         assert_eq!(self.context_id, context.0, "Context mismatch");
         Arrangement {
             inner: RefCell::new(ArrangementInner {
@@ -50,5 +48,11 @@ impl<C: Operator> CWrapper<C> {
             }),
             context_id: self.context_id,
         }
+    }
+    pub fn get_arrangement(self, context: &CreationContext) -> Arrangement<C::D, C::R>
+    where
+        C: 'static,
+    {
+        self.wcollect().get_c_arrangement(context)
     }
 }
