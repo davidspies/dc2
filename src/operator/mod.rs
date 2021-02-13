@@ -7,7 +7,7 @@ mod reduce;
 mod split;
 
 pub use self::collect::{Collection, TCollection, WCollection};
-pub use self::input::{Input, InputCollection};
+pub use self::input::Input;
 pub use self::split::Receiver;
 use super::Step;
 use crate::is_map::IsAddMap;

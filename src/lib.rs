@@ -8,7 +8,7 @@ mod monoid;
 mod operator;
 
 pub use self::arrangement::Arrangement;
-pub use self::operator::{Collection, DynOperator, Input, InputCollection, Operator, WCollection};
+pub use self::operator::{Collection, DynOperator, Input, Operator, WCollection};
 use std::sync::atomic::{self, AtomicUsize};
 
 static NEXT_ID: AtomicUsize = AtomicUsize::new(0);

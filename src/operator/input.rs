@@ -2,7 +2,7 @@ use super::{default_flow_to, DynOperator, Operator};
 use crate::is_map::IsAddMap;
 use crate::key::Key;
 use crate::monoid::Monoid;
-use crate::{ContextId, CreationContext, ExecutionContext, Step};
+use crate::{ContextId, CreationContext, ExecutionContext, Relation, Step};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::mem;
@@ -18,7 +18,7 @@ pub struct Input<D, R> {
     inner: Rc<RefCell<InputInner<D, R>>>,
     context_id: ContextId,
 }
-pub struct InputCollection<D, R>(Rc<RefCell<InputInner<D, R>>>);
+struct InputCollection<D, R>(Rc<RefCell<InputInner<D, R>>>);
 
 impl<D: Key, R: Monoid> Input<D, R> {
     pub fn update(&self, context: &ExecutionContext, x: D, r: R) {
@@ -77,7 +77,9 @@ impl<D: Key, R: Monoid> Operator for InputCollection<D, R> {
 }
 
 impl CreationContext {
-    pub fn create_input<D, R>(&self) -> (Input<D, R>, InputCollection<D, R>) {
+    pub fn create_input<D: Key, R: Monoid>(
+        &self,
+    ) -> (Input<D, R>, Relation<impl Operator<D = D, R = R>>) {
         let inner = Rc::new(RefCell::new(InputInner {
             step: Step(0),
             pending: HashMap::new(),
@@ -88,7 +90,10 @@ impl CreationContext {
                 inner: inner.clone(),
                 context_id: self.0,
             },
-            InputCollection(inner),
+            Relation {
+                inner: InputCollection(inner),
+                context_id: self.0,
+            },
         )
     }
 }
