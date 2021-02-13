@@ -33,7 +33,7 @@ impl<C: Operator> CWrapper<C> {
         self,
         other: CWrapper<C2>,
     ) -> CWrapper<impl Operator<D = C::D, R = C::R>> {
-        assert_eq!(self.context_id, other.context_id);
+        assert_eq!(self.context_id, other.context_id, "Context mismatch");
         CWrapper {
             inner: Concat {
                 left: self.inner,

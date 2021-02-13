@@ -72,7 +72,7 @@ impl<K: Key, D: Key, C: Operator<D = (K, D)>> CWrapper<C> {
     where
         C::R: Mul<C2::R, Output = OR>,
     {
-        assert_eq!(self.context_id, other.context_id);
+        assert_eq!(self.context_id, other.context_id, "Context mismatch");
         CWrapper {
             inner: Join {
                 left: self.inner,

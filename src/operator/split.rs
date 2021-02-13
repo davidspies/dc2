@@ -5,11 +5,11 @@ use crate::{CWrapper, Step};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::mem;
-use std::rc::{Rc, Weak};
+use std::rc::Rc;
 
 struct Source<C: Operator> {
     source: C,
-    listeners: Vec<Weak<RefCell<HashMap<C::D, C::R>>>>,
+    listeners: Vec<Rc<RefCell<HashMap<C::D, C::R>>>>,
     step: Step,
 }
 
@@ -21,10 +21,7 @@ pub struct Receiver<C: Operator> {
 impl<C: Operator> Clone for Receiver<C> {
     fn clone(&self) -> Self {
         let data = Rc::new(RefCell::new(self.data.borrow().clone()));
-        self.source
-            .borrow_mut()
-            .listeners
-            .push(Rc::downgrade(&data));
+        self.source.borrow_mut().listeners.push(Rc::clone(&data));
         Receiver {
             data,
             source: self.source.clone(),
@@ -53,11 +50,9 @@ impl<C: Operator> Operator for Receiver<C> {
             let mut changes = HashMap::new();
             inner.flow(step, |x, r| changes.add(x, r));
             for (listener, changes) in listeners.iter().tuple_with(changes) {
-                if let Some(l) = listener.upgrade() {
-                    let mut lborrowed = l.borrow_mut();
-                    for (x, r) in changes {
-                        lborrowed.add(x, r);
-                    }
+                let mut lborrowed = listener.borrow_mut();
+                for (x, r) in changes {
+                    lborrowed.add(x, r);
                 }
             }
         }
@@ -72,7 +67,7 @@ impl<C: Operator> CWrapper<C> {
         let data = Rc::new(RefCell::new(HashMap::new()));
         let source = Rc::new(RefCell::new(Source {
             source: self.inner,
-            listeners: vec![Rc::downgrade(&data)],
+            listeners: vec![Rc::clone(&data)],
             step: Step(0),
         }));
         CWrapper {

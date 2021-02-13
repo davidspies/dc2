@@ -8,11 +8,24 @@ mod monoid;
 mod operator;
 
 pub use self::arrangement::Arrangement;
-pub use self::operator::{Collection, DynOperator, Operator, WCollection};
+pub use self::operator::{Collection, DynOperator, Input, InputCollection, Operator, WCollection};
+use std::sync::atomic::{self, AtomicUsize};
+
+static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
+
+fn next_id() -> ContextId {
+    NEXT_ID.fetch_add(1, atomic::Ordering::SeqCst)
+}
 
 type ContextId = usize;
 
 pub struct CreationContext(ContextId);
+
+impl CreationContext {
+    pub fn new() -> Self {
+        CreationContext(next_id())
+    }
+}
 
 pub struct ExecutionContext {
     step: Step,
