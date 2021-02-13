@@ -1,14 +1,14 @@
-use super::{default_flow_to, DynOperator, Operator};
-use crate::is_map::{IsAddMap, IsDiscardMap, IsMap, IsRemoveMap};
-use crate::key::Key;
-use crate::monoid::Monoid;
-use crate::Relation;
-use crate::Step;
+use super::{default_flow_to, Op, Operator};
+use crate::core::is_map::{IsAddMap, IsDiscardMap, IsMap, IsRemoveMap};
+use crate::core::key::Key;
+use crate::core::monoid::Monoid;
+use crate::core::Relation;
+use crate::core::Step;
 use std::collections::{hash_map, HashMap, HashSet};
 use std::marker::PhantomData;
 use std::mem;
 
-pub(crate) struct Reduce<D2, R2, C, K, M1, M2, F: Fn(K, &M1) -> M2> {
+pub(in crate::core) struct Reduce<D2, R2, C, K, M1, M2, F: Fn(K, &M1) -> M2> {
     inner: C,
     input_maps: HashMap<K, M1>,
     output_maps: HashMap<K, M2>,
@@ -17,7 +17,7 @@ pub(crate) struct Reduce<D2, R2, C, K, M1, M2, F: Fn(K, &M1) -> M2> {
 }
 
 impl<
-        C: Operator<D = (K, D1)>,
+        C: Op<D = (K, D1)>,
         K: Key,
         D1,
         M1: IsAddMap<D1, C::R>,
@@ -25,7 +25,7 @@ impl<
         MF: Fn(K, &M1) -> M2,
         D2: Key,
         R2: Monoid,
-    > DynOperator for Reduce<D2, R2, C, K, M1, M2, MF>
+    > Operator for Reduce<D2, R2, C, K, M1, M2, MF>
 {
     type D = (K, D2);
     type R = R2;
@@ -35,7 +35,7 @@ impl<
 }
 
 impl<
-        C: Operator<D = (K, D1)>,
+        C: Op<D = (K, D1)>,
         K: Key,
         D1,
         M1: IsAddMap<D1, C::R>,
@@ -43,7 +43,7 @@ impl<
         MF: Fn(K, &M1) -> M2,
         D2: Key,
         R2: Monoid,
-    > Operator for Reduce<D2, R2, C, K, M1, M2, MF>
+    > Op for Reduce<D2, R2, C, K, M1, M2, MF>
 {
     fn flow<F: FnMut((K, D2), R2)>(&mut self, step: Step, mut send: F) {
         let mut changed_keys = HashSet::new();
@@ -96,7 +96,7 @@ impl<
     }
 }
 
-impl<K: Key, D: Key, C: Operator<D = (K, D)>> Relation<C> {
+impl<K: Key, D: Key, C: Op<D = (K, D)>> Relation<C> {
     pub fn reduce<
         D2: Key,
         R2: Monoid,
@@ -106,7 +106,7 @@ impl<K: Key, D: Key, C: Operator<D = (K, D)>> Relation<C> {
     >(
         self,
         proc: F,
-    ) -> Relation<impl Operator<D = (K, D2), R = R2>> {
+    ) -> Relation<impl Op<D = (K, D2), R = R2>> {
         Relation {
             inner: Reduce {
                 inner: self.inner,

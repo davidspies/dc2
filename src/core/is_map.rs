@@ -1,5 +1,5 @@
-use crate::emptyable::Emptyable;
-use crate::monoid::Monoid;
+use crate::core::emptyable::Emptyable;
+use crate::core::monoid::Monoid;
 use std::collections::{btree_map, hash_map, BTreeMap, HashMap};
 use std::hash::Hash;
 use std::mem;

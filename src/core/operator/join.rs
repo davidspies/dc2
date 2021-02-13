@@ -1,9 +1,9 @@
-use super::{default_flow_to, DynOperator, Operator};
-use crate::borrow::BorrowOrDefault;
-use crate::is_map::IsAddMap;
-use crate::key::Key;
-use crate::monoid::Monoid;
-use crate::{Relation, Step};
+use super::{default_flow_to, Op, Operator};
+use crate::core::borrow::BorrowOrDefault;
+use crate::core::is_map::IsAddMap;
+use crate::core::key::Key;
+use crate::core::monoid::Monoid;
+use crate::core::{Relation, Step};
 use std::collections::HashMap;
 use std::ops::Mul;
 
@@ -15,15 +15,15 @@ struct Join<LC, RC, K, LD, LR, RD, RR> {
 }
 
 impl<
-        LC: Operator<D = (K, LD), R = LR>,
-        RC: Operator<D = (K, RD), R = RR>,
+        LC: Op<D = (K, LD), R = LR>,
+        RC: Op<D = (K, RD), R = RR>,
         K: Key,
         LD: Key,
         LR: Monoid + Mul<RR, Output = OR>,
         RD: Key,
         RR: Monoid,
         OR: Monoid,
-    > DynOperator for Join<LC, RC, K, LD, LR, RD, RR>
+    > Operator for Join<LC, RC, K, LD, LR, RD, RR>
 {
     type D = (K, LD, RD);
     type R = OR;
@@ -32,15 +32,15 @@ impl<
     }
 }
 impl<
-        LC: Operator<D = (K, LD), R = LR>,
-        RC: Operator<D = (K, RD), R = RR>,
+        LC: Op<D = (K, LD), R = LR>,
+        RC: Op<D = (K, RD), R = RR>,
         K: Key,
         LD: Key,
         LR: Monoid + Mul<RR, Output = OR>,
         RD: Key,
         RR: Monoid,
         OR: Monoid,
-    > Operator for Join<LC, RC, K, LD, LR, RD, RR>
+    > Op for Join<LC, RC, K, LD, LR, RD, RR>
 {
     fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: Step, mut send: F) {
         let Join {
@@ -64,11 +64,11 @@ impl<
     }
 }
 
-impl<K: Key, D: Key, C: Operator<D = (K, D)>> Relation<C> {
-    pub fn join<C2: Operator<D = (K, D2)>, D2: Key, OR: Monoid>(
+impl<K: Key, D: Key, C: Op<D = (K, D)>> Relation<C> {
+    pub fn join<C2: Op<D = (K, D2)>, D2: Key, OR: Monoid>(
         self,
         other: Relation<C2>,
-    ) -> Relation<impl Operator<D = (K, D, D2), R = OR>>
+    ) -> Relation<impl Op<D = (K, D, D2), R = OR>>
     where
         C::R: Mul<C2::R, Output = OR>,
     {

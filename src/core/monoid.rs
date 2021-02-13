@@ -1,4 +1,4 @@
-use crate::emptyable::Emptyable;
+use crate::core::emptyable::Emptyable;
 use std::ops::{AddAssign, Neg, Sub};
 
 pub trait Monoid:

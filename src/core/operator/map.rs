@@ -1,7 +1,7 @@
-use super::{default_flow_to, DynOperator, Operator};
-use crate::key::Key;
-use crate::monoid::Monoid;
-use crate::{Relation, Step};
+use super::{default_flow_to, Op, Operator};
+use crate::core::key::Key;
+use crate::core::monoid::Monoid;
+use crate::core::{Relation, Step};
 use std::collections::HashMap;
 
 struct FlatMap<C, MF> {
@@ -14,10 +14,10 @@ impl<
         R1,
         D2: Key,
         R2: Monoid,
-        C: Operator<D = D1, R = R1>,
+        C: Op<D = D1, R = R1>,
         I: IntoIterator<Item = (D2, R2)>,
         MF: Fn(D1, R1) -> I,
-    > DynOperator for FlatMap<C, MF>
+    > Operator for FlatMap<C, MF>
 {
     type D = D2;
     type R = R2;
@@ -31,10 +31,10 @@ impl<
         R1,
         D2: Key,
         R2: Monoid,
-        C: Operator<D = D1, R = R1>,
+        C: Op<D = D1, R = R1>,
         I: IntoIterator<Item = (D2, R2)>,
         MF: Fn(D1, R1) -> I,
-    > Operator for FlatMap<C, MF>
+    > Op for FlatMap<C, MF>
 {
     fn flow<F: FnMut(D2, R2)>(&mut self, step: Step, mut send: F) {
         let FlatMap {
@@ -49,7 +49,7 @@ impl<
     }
 }
 
-impl<C: Operator> Relation<C> {
+impl<C: Op> Relation<C> {
     pub fn flat_map_r<
         F: Fn(C::D, C::R) -> I,
         D2: Key,
@@ -58,7 +58,7 @@ impl<C: Operator> Relation<C> {
     >(
         self,
         f: F,
-    ) -> Relation<impl Operator<D = D2, R = R2>> {
+    ) -> Relation<impl Op<D = D2, R = R2>> {
         Relation {
             inner: FlatMap {
                 inner: self.inner,

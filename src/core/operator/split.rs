@@ -1,24 +1,24 @@
-use super::{default_flow_to, DynOperator, Operator};
-use crate::is_map::IsAddMap;
-use crate::iter::TupleableWith;
-use crate::{Relation, Step};
+use super::{default_flow_to, Op, Operator};
+use crate::core::is_map::IsAddMap;
+use crate::core::iter::TupleableWith;
+use crate::core::{Relation, Step};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::mem;
 use std::rc::Rc;
 
-struct Source<C: Operator> {
+struct Source<C: Op> {
     source: C,
     listeners: Vec<Rc<RefCell<HashMap<C::D, C::R>>>>,
     step: Step,
 }
 
-pub struct Receiver<C: Operator> {
+pub struct Receiver<C: Op> {
     data: Rc<RefCell<HashMap<C::D, C::R>>>,
     source: Rc<RefCell<Source<C>>>,
 }
 
-impl<C: Operator> Clone for Receiver<C> {
+impl<C: Op> Clone for Receiver<C> {
     fn clone(&self) -> Self {
         let data = Rc::new(RefCell::new(self.data.borrow().clone()));
         self.source.borrow_mut().listeners.push(Rc::clone(&data));
@@ -29,7 +29,7 @@ impl<C: Operator> Clone for Receiver<C> {
     }
 }
 
-impl<C: Operator> DynOperator for Receiver<C> {
+impl<C: Op> Operator for Receiver<C> {
     type D = C::D;
     type R = C::R;
     fn flow_to(&mut self, step: Step) -> HashMap<Self::D, Self::R> {
@@ -37,7 +37,7 @@ impl<C: Operator> DynOperator for Receiver<C> {
     }
 }
 
-impl<C: Operator> Operator for Receiver<C> {
+impl<C: Op> Op for Receiver<C> {
     fn flow<F: FnMut(C::D, C::R)>(&mut self, step: Step, mut send: F) {
         if self.source.borrow().step < step {
             let mut source = self.source.borrow_mut();
@@ -62,7 +62,7 @@ impl<C: Operator> Operator for Receiver<C> {
     }
 }
 
-impl<C: Operator> Relation<C> {
+impl<C: Op> Relation<C> {
     pub fn split(self) -> Relation<Receiver<C>> {
         let data = Rc::new(RefCell::new(HashMap::new()));
         let source = Rc::new(RefCell::new(Source {
