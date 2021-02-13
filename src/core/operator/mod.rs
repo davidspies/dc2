@@ -6,7 +6,7 @@ mod map;
 mod reduce;
 mod split;
 
-pub use self::dynamic::{DynOp, DynReceiver};
+pub use self::dynamic::DynOp;
 pub use self::input::Input;
 pub use self::split::Receiver;
 use super::Step;

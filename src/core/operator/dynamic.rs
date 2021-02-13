@@ -1,12 +1,10 @@
-use super::{Op, Receiver};
+use super::Op;
 use crate::core::is_map::IsAddMap;
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
 use crate::core::Relation;
 use crate::core::Step;
 use std::collections::HashMap;
-
-pub type DynReceiver<D, R> = Receiver<DynOp<D, R>>;
 
 pub struct DynOp<D, R>(Box<dyn DOp<D = D, R = R>>);
 

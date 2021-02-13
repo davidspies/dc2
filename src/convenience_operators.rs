@@ -2,11 +2,12 @@ use crate::core::iter::TupleableWith;
 use crate::key::Key;
 use crate::map::{SingletonMap, UnitMap};
 use crate::monoid::Monoid;
-use crate::{Arrangement, CreationContext, DynReceiver, Op, Relation};
+use crate::{Arrangement, CreationContext, DynOp, Op, Receiver, Relation};
 use std::collections::BTreeMap;
 use std::iter;
 use std::ops::{Mul, Neg};
 
+pub type DynReceiver<D, R> = Receiver<DynOp<D, R>>;
 pub type Collection<D, R> = Relation<DynReceiver<D, R>>;
 
 impl<C: Op> Relation<C> {
