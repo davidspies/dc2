@@ -2,7 +2,6 @@ use crate::core::emptyable::Emptyable;
 use crate::core::monoid::Monoid;
 use std::collections::{btree_map, hash_map, BTreeMap, HashMap};
 use std::hash::Hash;
-use std::mem;
 
 pub trait IsRemoveMap<K, V>: Emptyable {
     fn remove(&mut self, k: &K) -> Option<V>;
@@ -22,12 +21,6 @@ pub trait IsMap<K, V> {
 
 pub trait IsAddMap<K, V>: Emptyable {
     fn add(&mut self, k: K, v: V);
-}
-
-pub trait IsEntryMap<K, V>: IsRemoveMap<K, V> {
-    fn replace_entry(&mut self, k: K, new_val: V) -> (&mut V, Option<V>);
-    fn singleton_map(k: K, v: V) -> Self;
-    fn get_singleton_mut_val(&mut self) -> &mut V;
 }
 
 impl<K: Eq + Hash, V> IsRemoveMap<K, V> for HashMap<K, V> {
@@ -75,28 +68,6 @@ impl<K: Eq + Hash, V: Monoid> IsAddMap<K, V> for HashMap<K, V> {
                 }
             }
         }
-    }
-}
-
-impl<K: Eq + Hash, V> IsEntryMap<K, V> for HashMap<K, V> {
-    fn replace_entry(&mut self, k: K, new_value: V) -> (&mut V, Option<V>) {
-        match self.entry(k) {
-            hash_map::Entry::Occupied(oe) => {
-                let r = oe.into_mut();
-                let old = mem::replace(r, new_value);
-                (r, Some(old))
-            }
-            hash_map::Entry::Vacant(ve) => (ve.insert(new_value), None),
-        }
-    }
-    fn singleton_map(k: K, v: V) -> Self {
-        vec![(k, v)].into_iter().collect()
-    }
-    fn get_singleton_mut_val(&mut self) -> &mut V {
-        let mut iter = self.iter_mut();
-        let (_, r) = iter.next().expect("Empty map");
-        assert!(iter.next().is_none(), "Multiple entries");
-        r
     }
 }
 

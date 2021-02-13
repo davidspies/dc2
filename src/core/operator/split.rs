@@ -1,4 +1,4 @@
-use super::{default_flow_to, Op, Operator};
+use super::Op;
 use crate::core::is_map::IsAddMap;
 use crate::core::iter::TupleableWith;
 use crate::core::{Relation, Step};
@@ -29,15 +29,10 @@ impl<C: Op> Clone for Receiver<C> {
     }
 }
 
-impl<C: Op> Operator for Receiver<C> {
+impl<C: Op> Op for Receiver<C> {
     type D = C::D;
     type R = C::R;
-    fn flow_to(&mut self, step: Step) -> HashMap<Self::D, Self::R> {
-        default_flow_to(self, step)
-    }
-}
 
-impl<C: Op> Op for Receiver<C> {
     fn flow<F: FnMut(C::D, C::R)>(&mut self, step: Step, mut send: F) {
         if self.source.borrow().step < step {
             let mut source = self.source.borrow_mut();

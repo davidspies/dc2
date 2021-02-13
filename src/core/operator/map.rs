@@ -1,8 +1,7 @@
-use super::{default_flow_to, Op, Operator};
+use super::Op;
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
 use crate::core::{Relation, Step};
-use std::collections::HashMap;
 
 struct FlatMap<C, MF> {
     inner: C,
@@ -17,25 +16,11 @@ impl<
         C: Op<D = D1, R = R1>,
         I: IntoIterator<Item = (D2, R2)>,
         MF: Fn(D1, R1) -> I,
-    > Operator for FlatMap<C, MF>
+    > Op for FlatMap<C, MF>
 {
     type D = D2;
     type R = R2;
-    fn flow_to(&mut self, step: Step) -> HashMap<Self::D, Self::R> {
-        default_flow_to(self, step)
-    }
-}
 
-impl<
-        D1,
-        R1,
-        D2: Key,
-        R2: Monoid,
-        C: Op<D = D1, R = R1>,
-        I: IntoIterator<Item = (D2, R2)>,
-        MF: Fn(D1, R1) -> I,
-    > Op for FlatMap<C, MF>
-{
     fn flow<F: FnMut(D2, R2)>(&mut self, step: Step, mut send: F) {
         let FlatMap {
             ref mut inner,
@@ -50,7 +35,7 @@ impl<
 }
 
 impl<C: Op> Relation<C> {
-    pub fn flat_map_r<
+    pub fn flat_map_dr<
         F: Fn(C::D, C::R) -> I,
         D2: Key,
         R2: Monoid,

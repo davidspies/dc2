@@ -1,4 +1,4 @@
-use super::{default_flow_to, Op, Operator};
+use super::Op;
 use crate::core::is_map::IsAddMap;
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
@@ -47,14 +47,10 @@ impl<D: Key, R: Monoid> InputInner<D, R> {
         }
     }
 }
-impl<D: Key, R: Monoid> Operator for InputInner<D, R> {
+impl<D: Key, R: Monoid> Op for InputInner<D, R> {
     type D = D;
     type R = R;
-    fn flow_to(&mut self, step: Step) -> HashMap<Self::D, Self::R> {
-        default_flow_to(self, step)
-    }
-}
-impl<D: Key, R: Monoid> Op for InputInner<D, R> {
+
     fn flow<F: FnMut(D, R)>(&mut self, step: Step, mut send: F) {
         self.resolve(step);
         for (x, r) in mem::take(&mut self.pending) {
@@ -63,14 +59,10 @@ impl<D: Key, R: Monoid> Op for InputInner<D, R> {
     }
 }
 
-impl<D: Key, R: Monoid> Operator for InputCollection<D, R> {
+impl<D: Key, R: Monoid> Op for InputCollection<D, R> {
     type D = D;
     type R = R;
-    fn flow_to(&mut self, step: Step) -> HashMap<Self::D, Self::R> {
-        self.0.borrow_mut().flow_to(step)
-    }
-}
-impl<D: Key, R: Monoid> Op for InputCollection<D, R> {
+
     fn flow<F: FnMut(D, R)>(&mut self, step: Step, send: F) {
         self.0.borrow_mut().flow(step, send)
     }

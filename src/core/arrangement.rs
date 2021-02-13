@@ -49,10 +49,4 @@ impl<C: Op> Relation<C> {
             context_id: self.context_id,
         }
     }
-    pub fn get_dyn_arrangement(self, context: &CreationContext) -> Arrangement<C::D, C::R>
-    where
-        C: 'static,
-    {
-        self.dynamic().get_arrangement(context)
-    }
 }

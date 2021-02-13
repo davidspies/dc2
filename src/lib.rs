@@ -1,8 +1,13 @@
-mod core;
+#![feature(map_first_last)]
 
+mod convenience_operators;
+mod core;
+pub mod map;
+
+pub use self::convenience_operators::Collection;
 pub use self::core::{
-    borrow, emptyable, key, monoid, Arrangement, Collection, CreationContext, DynOp,
-    ExecutionContext, Input, Op, Operator, Relation,
+    borrow, emptyable, key, monoid, Arrangement, CreationContext, DynOp, DynReceiver,
+    ExecutionContext, Input, Op, Receiver, Relation,
 };
 
 #[cfg(test)]

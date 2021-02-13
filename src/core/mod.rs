@@ -2,13 +2,13 @@ mod arrangement;
 pub mod borrow;
 pub mod emptyable;
 pub mod is_map;
-mod iter;
+pub mod iter;
 pub mod key;
 pub mod monoid;
 mod operator;
 
 pub use self::arrangement::Arrangement;
-pub use self::operator::{Collection, DynOp, Input, Op, Operator};
+pub use self::operator::{DynOp, DynReceiver, Input, Op, Receiver};
 use std::sync::atomic::{self, AtomicUsize};
 
 static NEXT_ID: AtomicUsize = AtomicUsize::new(0);

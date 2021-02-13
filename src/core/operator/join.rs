@@ -1,4 +1,4 @@
-use super::{default_flow_to, Op, Operator};
+use super::Op;
 use crate::core::borrow::BorrowOrDefault;
 use crate::core::is_map::IsAddMap;
 use crate::core::key::Key;
@@ -23,25 +23,11 @@ impl<
         RD: Key,
         RR: Monoid,
         OR: Monoid,
-    > Operator for Join<LC, RC, K, LD, LR, RD, RR>
+    > Op for Join<LC, RC, K, LD, LR, RD, RR>
 {
     type D = (K, LD, RD);
     type R = OR;
-    fn flow_to(&mut self, step: Step) -> HashMap<Self::D, Self::R> {
-        default_flow_to(self, step)
-    }
-}
-impl<
-        LC: Op<D = (K, LD), R = LR>,
-        RC: Op<D = (K, RD), R = RR>,
-        K: Key,
-        LD: Key,
-        LR: Monoid + Mul<RR, Output = OR>,
-        RD: Key,
-        RR: Monoid,
-        OR: Monoid,
-    > Op for Join<LC, RC, K, LD, LR, RD, RR>
-{
+
     fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: Step, mut send: F) {
         let Join {
             left,
