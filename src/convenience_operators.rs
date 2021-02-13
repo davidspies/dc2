@@ -60,7 +60,7 @@ impl<C: Op> Relation<C> {
 }
 
 impl<K: Key, V: Key, C: Op<D = (K, V)>> Relation<C> {
-    pub fn semijoin<C2: Op<D = K, R = R2>, R2, R3: Monoid>(
+    pub fn semijoin<C2: Op<D = K, R = R2>, R2: Monoid, R3: Monoid>(
         self,
         other: Relation<C2>,
     ) -> Relation<impl Op<D = C::D, R = R3>>
@@ -69,7 +69,7 @@ impl<K: Key, V: Key, C: Op<D = (K, V)>> Relation<C> {
     {
         self.join(other.map(|x| (x, ()))).map(|(k, x, ())| (k, x))
     }
-    pub fn antijoin<C2: Op<D = K, R = R2>, R2>(
+    pub fn antijoin<C2: Op<D = K, R = R2>, R2: Monoid>(
         self,
         other: Relation<C2>,
     ) -> Relation<impl Op<D = C::D, R = C::R>>
