@@ -1,7 +1,7 @@
 use super::{default_flow_to, DynOperator, Operator};
 use crate::key::Key;
 use crate::monoid::Monoid;
-use crate::{CWrapper, Step};
+use crate::{Relation, Step};
 use std::collections::HashMap;
 
 struct FlatMap<C, MF> {
@@ -49,7 +49,7 @@ impl<
     }
 }
 
-impl<C: Operator> CWrapper<C> {
+impl<C: Operator> Relation<C> {
     pub fn flat_map_r<
         F: Fn(C::D, C::R) -> I,
         D2: Key,
@@ -58,8 +58,8 @@ impl<C: Operator> CWrapper<C> {
     >(
         self,
         f: F,
-    ) -> CWrapper<impl Operator<D = D2, R = R2>> {
-        CWrapper {
+    ) -> Relation<impl Operator<D = D2, R = R2>> {
+        Relation {
             inner: FlatMap {
                 inner: self.inner,
                 op: f,

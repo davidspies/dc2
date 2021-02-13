@@ -51,7 +51,7 @@ impl ExecutionContext {
 pub struct Step(usize);
 
 #[derive(Clone)]
-pub struct CWrapper<C> {
+pub struct Relation<C> {
     inner: C,
     context_id: ContextId,
 }

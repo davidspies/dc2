@@ -1,7 +1,7 @@
 use super::{default_flow_to, DynOperator, Operator};
 use crate::key::Key;
 use crate::monoid::Monoid;
-use crate::{CWrapper, Step};
+use crate::{Relation, Step};
 use std::collections::HashMap;
 
 struct Concat<C1, C2> {
@@ -28,13 +28,13 @@ impl<D: Key, R: Monoid, C1: Operator<D = D, R = R>, C2: Operator<D = D, R = R>> 
     }
 }
 
-impl<C: Operator> CWrapper<C> {
+impl<C: Operator> Relation<C> {
     pub fn concat<C2: Operator<D = C::D, R = C::R>>(
         self,
-        other: CWrapper<C2>,
-    ) -> CWrapper<impl Operator<D = C::D, R = C::R>> {
+        other: Relation<C2>,
+    ) -> Relation<impl Operator<D = C::D, R = C::R>> {
         assert_eq!(self.context_id, other.context_id, "Context mismatch");
-        CWrapper {
+        Relation {
             inner: Concat {
                 left: self.inner,
                 right: other.inner,

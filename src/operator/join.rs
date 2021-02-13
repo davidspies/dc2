@@ -3,7 +3,7 @@ use crate::borrow::BorrowOrDefault;
 use crate::is_map::IsAddMap;
 use crate::key::Key;
 use crate::monoid::Monoid;
-use crate::{CWrapper, Step};
+use crate::{Relation, Step};
 use std::collections::HashMap;
 use std::ops::Mul;
 
@@ -64,16 +64,16 @@ impl<
     }
 }
 
-impl<K: Key, D: Key, C: Operator<D = (K, D)>> CWrapper<C> {
+impl<K: Key, D: Key, C: Operator<D = (K, D)>> Relation<C> {
     pub fn join<C2: Operator<D = (K, D2)>, D2: Key, OR: Monoid>(
         self,
-        other: CWrapper<C2>,
-    ) -> CWrapper<impl Operator<D = (K, D, D2), R = OR>>
+        other: Relation<C2>,
+    ) -> Relation<impl Operator<D = (K, D, D2), R = OR>>
     where
         C::R: Mul<C2::R, Output = OR>,
     {
         assert_eq!(self.context_id, other.context_id, "Context mismatch");
-        CWrapper {
+        Relation {
             inner: Join {
                 left: self.inner,
                 right: other.inner,

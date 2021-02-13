@@ -2,7 +2,7 @@ use super::{default_flow_to, DynOperator, Operator};
 use crate::is_map::{IsAddMap, IsDiscardMap, IsMap, IsRemoveMap};
 use crate::key::Key;
 use crate::monoid::Monoid;
-use crate::CWrapper;
+use crate::Relation;
 use crate::Step;
 use std::collections::{hash_map, HashMap, HashSet};
 use std::marker::PhantomData;
@@ -96,7 +96,7 @@ impl<
     }
 }
 
-impl<K: Key, D: Key, C: Operator<D = (K, D)>> CWrapper<C> {
+impl<K: Key, D: Key, C: Operator<D = (K, D)>> Relation<C> {
     pub fn reduce<
         D2: Key,
         R2: Monoid,
@@ -106,8 +106,8 @@ impl<K: Key, D: Key, C: Operator<D = (K, D)>> CWrapper<C> {
     >(
         self,
         proc: F,
-    ) -> CWrapper<impl Operator<D = (K, D2), R = R2>> {
-        CWrapper {
+    ) -> Relation<impl Operator<D = (K, D2), R = R2>> {
+        Relation {
             inner: Reduce {
                 inner: self.inner,
                 input_maps: HashMap::new(),

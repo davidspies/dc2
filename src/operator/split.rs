@@ -1,7 +1,7 @@
 use super::{default_flow_to, DynOperator, Operator};
 use crate::is_map::IsAddMap;
 use crate::iter::TupleableWith;
-use crate::{CWrapper, Step};
+use crate::{Relation, Step};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::mem;
@@ -62,15 +62,15 @@ impl<C: Operator> Operator for Receiver<C> {
     }
 }
 
-impl<C: Operator> CWrapper<C> {
-    pub fn split(self) -> CWrapper<Receiver<C>> {
+impl<C: Operator> Relation<C> {
+    pub fn split(self) -> Relation<Receiver<C>> {
         let data = Rc::new(RefCell::new(HashMap::new()));
         let source = Rc::new(RefCell::new(Source {
             source: self.inner,
             listeners: vec![Rc::clone(&data)],
             step: Step(0),
         }));
-        CWrapper {
+        Relation {
             inner: Receiver { data, source },
             context_id: self.context_id,
         }

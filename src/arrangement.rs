@@ -1,4 +1,4 @@
-use super::{CWrapper, ContextId, CreationContext, ExecutionContext, Step};
+use super::{Relation, ContextId, CreationContext, ExecutionContext, Step};
 use crate::is_map::IsAddMap;
 use crate::operator::{Operator, WCollection};
 use std::cell::{Ref, RefCell};
@@ -37,7 +37,7 @@ impl<C: Operator> ArrangementInner<C::D, C::R, C> {
     }
 }
 
-impl<C: Operator> CWrapper<C> {
+impl<C: Operator> Relation<C> {
     pub fn get_c_arrangement(self, context: &CreationContext) -> Arrangement<C::D, C::R, C> {
         assert_eq!(self.context_id, context.0, "Context mismatch");
         Arrangement {

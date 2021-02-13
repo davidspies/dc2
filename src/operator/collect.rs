@@ -1,12 +1,12 @@
 use super::{DynOperator, Operator, Receiver};
 use crate::key::Key;
 use crate::monoid::Monoid;
-use crate::CWrapper;
+use crate::Relation;
 use crate::Step;
 use std::collections::HashMap;
 
 pub type TCollection<D, R> = Receiver<WCollection<D, R>>;
-pub type Collection<D, R> = CWrapper<TCollection<D, R>>;
+pub type Collection<D, R> = Relation<TCollection<D, R>>;
 
 pub struct WCollection<D, R>(Box<dyn DynOperator<D = D, R = R>>);
 
@@ -27,12 +27,12 @@ impl<D: Key, R: Monoid> Operator for WCollection<D, R> {
     }
 }
 
-impl<C: Operator> CWrapper<C> {
-    pub fn wcollect(self) -> CWrapper<WCollection<C::D, C::R>>
+impl<C: Operator> Relation<C> {
+    pub fn wcollect(self) -> Relation<WCollection<C::D, C::R>>
     where
         C: 'static,
     {
-        CWrapper {
+        Relation {
             inner: WCollection(Box::new(self.inner)),
             context_id: self.context_id,
         }
