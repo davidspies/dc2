@@ -1,55 +1,29 @@
 use super::Op;
-use crate::core::key::Key;
-use crate::core::monoid::Monoid;
-use crate::core::{Relation, Step};
+use crate::core::Relation;
+use std::ops::AddAssign;
 
-struct FlatMap<C, MF> {
-    inner: C,
-    op: MF,
+struct Map<C, MF> {
+    _inner: C,
+    _op: MF,
 }
 
-impl<
-        D1,
-        R1,
-        D2: Key,
-        R2: Monoid,
-        C: Op<D = D1, R = R1>,
-        I: IntoIterator<Item = (D2, R2)>,
-        MF: Fn(D1, R1) -> I,
-    > Op for FlatMap<C, MF>
+impl<D1, R1, D2: 'static, R2: AddAssign<R2>, C: Op<D = D1, R = R1>, MF: Fn(D1, R1) -> (D2, R2)> Op
+    for Map<C, MF>
 {
     type D = D2;
     type R = R2;
-
-    fn flow<F: FnMut(D2, R2)>(&mut self, step: Step, mut send: F) {
-        let FlatMap {
-            ref mut inner,
-            ref op,
-        } = self;
-        inner.flow(step, |x, r| {
-            for (x2, r2) in op(x, r) {
-                send(x2, r2)
-            }
-        })
-    }
 }
 
 impl<C: Op> Relation<C> {
-    pub fn flat_map_dr<
-        F: Fn(C::D, C::R) -> I,
-        D2: Key,
-        R2: Monoid,
-        I: IntoIterator<Item = (D2, R2)>,
-    >(
+    pub fn map_dr<F: Fn(C::D, C::R) -> (D2, R2), D2: 'static, R2: AddAssign<R2>>(
         self,
         f: F,
     ) -> Relation<impl Op<D = D2, R = R2>> {
         Relation {
-            inner: FlatMap {
-                inner: self.inner,
-                op: f,
+            inner: Map {
+                _inner: self.inner,
+                _op: f,
             },
-            context_id: self.context_id,
         }
     }
 }
