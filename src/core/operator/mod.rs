@@ -1,3 +1,4 @@
+mod barrier;
 mod concat;
 mod dynamic;
 mod input;

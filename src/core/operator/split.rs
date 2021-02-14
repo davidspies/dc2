@@ -1,3 +1,4 @@
+use super::barrier::Barrier;
 use super::Op;
 use crate::core::is_map::IsAddMap;
 use crate::core::iter::TupleableWith;
@@ -9,10 +10,8 @@ use std::mem;
 use std::rc::Rc;
 
 struct Source<C: Op> {
-    source: C,
+    source: Barrier<C>,
     listeners: Vec<Rc<RefCell<HashMap<C::D, C::R>>>>,
-    depth: usize,
-    step: usize,
 }
 
 pub struct Receiver<C: Op> {
@@ -36,25 +35,16 @@ impl<C: Op> Op for Receiver<C> {
     type R = C::R;
 
     fn flow<F: FnMut(C::D, C::R)>(&mut self, step: &Step, mut send: F) {
-        let step_at_depth = step.step_for(self.source.borrow().depth);
-        if self.source.borrow().step < step_at_depth.get_last() {
-            let mut source = self.source.borrow_mut();
-            let Source {
-                source: ref mut inner,
-                ref listeners,
-                step: ref mut prev_step,
-                depth: _,
-            } = &mut *source;
-            *prev_step = step_at_depth.get_last();
-            let mut changes = HashMap::new();
-            inner.flow(step_at_depth, |x, r| changes.add(x, r));
-            for (listener, changes) in listeners.iter().tuple_with(changes) {
-                let mut lborrowed = listener.borrow_mut();
-                for (x, r) in changes {
-                    lborrowed.add(x, r);
-                }
+        let mut source = self.source.borrow_mut();
+        let Source {
+            source: ref mut inner,
+            ref listeners,
+        } = &mut *source;
+        inner.flow(step, |x, r| {
+            for (listener, (x, r)) in listeners.iter().tuple_with((x, r)) {
+                listener.borrow_mut().add(x, r);
             }
-        }
+        });
         for (x, r) in mem::take(&mut *self.data.borrow_mut()) {
             send(x, r)
         }
@@ -63,17 +53,16 @@ impl<C: Op> Op for Receiver<C> {
 
 impl<'a, C: Op> Relation<'a, C> {
     pub fn split(self) -> Relation<'a, Receiver<C>> {
+        let this = self.barrier();
         let data = Rc::new(RefCell::new(HashMap::new()));
         let source = Rc::new(RefCell::new(Source {
-            source: self.inner,
+            source: this.inner,
             listeners: vec![Rc::clone(&data)],
-            depth: self.depth,
-            step: 0,
         }));
         Relation {
             inner: Receiver { data, source },
-            context_id: self.context_id,
-            depth: self.depth,
+            context_id: this.context_id,
+            depth: this.depth,
             phantom: PhantomData,
         }
     }
