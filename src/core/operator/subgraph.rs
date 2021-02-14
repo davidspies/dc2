@@ -8,7 +8,7 @@ pub struct SubContext<'a, Ctx, S>(&'a Ctx, PhantomData<S>);
 pub struct Finalizer<'a, Ctx>(&'a Ctx);
 
 impl CreationContext {
-    pub fn subgraph<'a, S>(&'a mut self) -> SubContext<'a, CreationContext, S> {
+    pub fn subgraph<'a, S>(&'a mut self) -> SubContext<'a, Self, S> {
         SubContext(self, PhantomData)
     }
 }
@@ -19,6 +19,9 @@ pub struct Variable<'a, S, D, R> {
 }
 
 impl<'a, Ctx, S: Key> SubContext<'a, Ctx, S> {
+    pub fn subgraph<'b, T>(&'b mut self) -> SubContext<'b, Self, T> {
+        SubContext(self, PhantomData)
+    }
     pub fn variable<D: Key, R: Monoid>(&self) -> (Variable<'a, S, D, R>, ()) {
         // Relation<impl Op<D = (S, D), R = R>>
         (unimplemented!(), unimplemented!())
