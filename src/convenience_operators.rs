@@ -14,14 +14,10 @@ impl<'a, C: Op> Relation<'a, C> {
     pub fn get_dyn_arrangement(self, context: &CreationContext) -> Arrangement<C::D, C::R>
     where
         'a: 'static,
-        C: 'static,
     {
         self.dynamic().get_arrangement(context)
     }
-    pub fn collect(self) -> Collection<'a, C::D, C::R>
-    where
-        C: 'static,
-    {
+    pub fn collect(self) -> Collection<'a, C::D, C::R> {
         self.dynamic().split()
     }
     pub fn flat_map<F: Fn(C::D) -> I + 'static, D2: Key, I: IntoIterator<Item = D2>>(

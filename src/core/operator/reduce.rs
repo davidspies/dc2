@@ -20,9 +20,9 @@ impl<
         C: Op<D = (K, D1)>,
         K: Key,
         D1,
-        M1: IsAddMap<D1, C::R>,
-        M2: IsMap<D2, R2>,
-        MF: Fn(&K, &M1) -> M2,
+        M1: IsAddMap<D1, C::R> + 'static,
+        M2: IsMap<D2, R2> + 'static,
+        MF: Fn(&K, &M1) -> M2 + 'static,
         D2: Key,
         R2: Monoid,
     > Op for Reduce<D2, R2, C, K, M1, M2, MF>
@@ -85,9 +85,9 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
     pub fn reduce<
         D2: Key,
         R2: Monoid,
-        F: Fn(&K, &M1) -> M2,
-        M1: IsAddMap<D, C::R>,
-        M2: IsMap<D2, R2>,
+        F: Fn(&K, &M1) -> M2 + 'static,
+        M1: IsAddMap<D, C::R> + 'static,
+        M2: IsMap<D2, R2> + 'static,
     >(
         self,
         proc: F,

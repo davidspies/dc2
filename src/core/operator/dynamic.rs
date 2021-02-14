@@ -30,10 +30,7 @@ impl<D: Key, R: Monoid> Op for DynOp<D, R> {
 }
 
 impl<'a, C: Op> Relation<'a, C> {
-    pub fn dynamic(self) -> Relation<'a, DynOp<C::D, C::R>>
-    where
-        C: 'static,
-    {
+    pub fn dynamic(self) -> Relation<'a, DynOp<C::D, C::R>> {
         Relation {
             inner: DynOp(Box::new(self.inner)),
             context_id: self.context_id,

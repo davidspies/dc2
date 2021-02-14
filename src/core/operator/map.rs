@@ -16,7 +16,7 @@ impl<
         R2: Monoid,
         C: Op<D = D1, R = R1>,
         I: IntoIterator<Item = (D2, R2)>,
-        MF: Fn(D1, R1) -> I,
+        MF: Fn(D1, R1) -> I + 'static,
     > Op for FlatMap<C, MF>
 {
     type D = D2;
@@ -37,7 +37,7 @@ impl<
 
 impl<'a, C: Op> Relation<'a, C> {
     pub fn flat_map_dr<
-        F: Fn(C::D, C::R) -> I,
+        F: Fn(C::D, C::R) -> I + 'static,
         D2: Key,
         R2: Monoid,
         I: IntoIterator<Item = (D2, R2)>,
