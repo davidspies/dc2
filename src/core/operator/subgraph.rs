@@ -38,13 +38,13 @@ impl<'a, S, D, R> Variable<'a, S, D, R> {
     }
 }
 
-impl<'a, C> Relation<'a, C> {
-    pub fn leave<'b, Ctx>(self, finalizer: Finalizer<'a, Ctx>) -> Relation<'b, C>
+impl<'b, C> Relation<'b, C> {
+    pub fn leave<'a, Ctx>(self, finalizer: Finalizer<'b, Ctx>) -> Relation<'a, C>
     where
-        'b: 'a,
-        Ctx: 'b,
+        'a: 'b,
+        Ctx: 'a,
     {
-        // Relation<'b, impl Op<D=C::D, R=C::R>>
+        // Relation<'a, impl Op<D=C::D, R=C::R>>
         // Assert contexts match
         unimplemented!()
     }
