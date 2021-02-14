@@ -10,13 +10,13 @@ pub struct DynOp<D, R>(Box<dyn DynOpT<D = D, R = R>>);
 trait DynOpT {
     type D: Key;
     type R: Monoid;
-    fn flow_dyn<'a>(&mut self, step: &Step, send: Box<dyn FnMut(Self::D, Self::R) + 'a>);
+    fn flow_dyn(&mut self, step: &Step, send: &mut dyn FnMut(Self::D, Self::R));
 }
 
 impl<T: Op> DynOpT for T {
     type D = <T as Op>::D;
     type R = <T as Op>::R;
-    fn flow_dyn<'a>(&mut self, step: &Step, send: Box<dyn FnMut(Self::D, Self::R) + 'a>) {
+    fn flow_dyn(&mut self, step: &Step, send: &mut dyn FnMut(Self::D, Self::R)) {
         self.flow(step, send)
     }
 }
@@ -24,8 +24,8 @@ impl<T: Op> DynOpT for T {
 impl<D: Key, R: Monoid> Op for DynOp<D, R> {
     type D = D;
     type R = R;
-    fn flow<F: FnMut(D, R)>(&mut self, step: &Step, send: F) {
-        self.0.flow_dyn(step, Box::new(send))
+    fn flow<F: FnMut(D, R)>(&mut self, step: &Step, mut send: F) {
+        self.0.flow_dyn(step, &mut send)
     }
 }
 
