@@ -29,8 +29,20 @@ impl<'a, Ctx, S: Key> SubContext<'a, Ctx, S> {
 }
 
 impl<'a, S, D, R> Variable<'a, S, D, R> {
-    fn set<C: Op<D = (S, D), R = R>>(self, rel: Relation<'a, C>) {
+    pub fn set<C: Op<D = (S, D), R = R>>(self, rel: Relation<'a, C>) {
         assert_eq!(self.context_id, rel.context_id, "Context mismatch");
+        unimplemented!()
+    }
+}
+
+impl<'a, C> Relation<'a, C> {
+    pub fn leave<'b, Ctx>(self, finalizer: Finalizer<'a, Ctx>) -> Relation<'b, C>
+    where
+        'b: 'a,
+        Ctx: 'b,
+    {
+        // Relation<'b, impl Op<D=C::D, R=C::R>>
+        // Assert contexts match
         unimplemented!()
     }
 }
