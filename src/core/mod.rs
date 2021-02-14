@@ -68,7 +68,10 @@ impl<'a> Step<'a> {
     }
     fn step_for(&self, depth: usize) -> &Step {
         match self {
-            &Self::Root(_) => self,
+            &Self::Root(_) => {
+                assert_eq!(depth, 0);
+                self
+            }
             &Self::Sub(Sub {
                 depth: my_depth,
                 step: _,
