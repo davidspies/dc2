@@ -59,6 +59,9 @@ impl<'a, C: Op> Relation<'a, C> {
         self.map(|x| (x, ()))
             .reduce(|_, xs: &UnitMap<C::R>| SingletonMap(xs.0.clone()))
     }
+    pub fn enter(self) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
+        self.barrier()
+    }
 }
 
 impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
