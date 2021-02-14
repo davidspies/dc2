@@ -57,6 +57,11 @@ impl<'a, C: Op> Relation<'a, C> {
     pub fn enter(self) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
         self.barrier()
     }
+    pub fn distinct(self) -> Relation<'a, impl Op<D = C::D, R = isize>> {
+        self.map(|x| (x, ()))
+            .reduce(|_, _: &UnitMap<C::R>| UnitMap(1))
+            .map(|(k, ())| k)
+    }
 }
 
 impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
