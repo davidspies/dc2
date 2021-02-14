@@ -3,7 +3,7 @@ use super::Op;
 use crate::core::is_map::IsAddMap;
 use crate::core::iter::TupleableWith;
 use crate::core::{Relation, Step};
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell, RefMut};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::mem;
@@ -17,6 +17,24 @@ struct Source<C: Op> {
 pub struct Receiver<C: Op> {
     data: Rc<RefCell<HashMap<C::D, C::R>>>,
     source: Rc<RefCell<Source<C>>>,
+}
+
+impl<C: Op> Receiver<C> {
+    pub(super) fn new(from: C, depth: usize) -> Self {
+        let source = Barrier::new(from, depth);
+        let data = Rc::new(RefCell::new(HashMap::new()));
+        let source = Rc::new(RefCell::new(Source {
+            source,
+            listeners: vec![Rc::clone(&data)],
+        }));
+        Receiver { data, source }
+    }
+    pub(super) fn get_inner(&self) -> Ref<C> {
+        Ref::map(self.source.borrow(), |r| &r.source.inner)
+    }
+    pub(super) fn get_inner_mut(&self) -> RefMut<C> {
+        RefMut::map(self.source.borrow_mut(), |r| &mut r.source.inner)
+    }
 }
 
 impl<C: Op> Clone for Receiver<C> {
@@ -53,16 +71,10 @@ impl<C: Op> Op for Receiver<C> {
 
 impl<'a, C: Op> Relation<'a, C> {
     pub fn split(self) -> Relation<'a, Receiver<C>> {
-        let this = self.barrier();
-        let data = Rc::new(RefCell::new(HashMap::new()));
-        let source = Rc::new(RefCell::new(Source {
-            source: this.inner,
-            listeners: vec![Rc::clone(&data)],
-        }));
         Relation {
-            inner: Receiver { data, source },
-            context_id: this.context_id,
-            depth: this.depth,
+            inner: Receiver::new(self.inner, self.depth),
+            context_id: self.context_id,
+            depth: self.depth,
             phantom: PhantomData,
         }
     }

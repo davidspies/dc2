@@ -49,9 +49,9 @@ impl ExecutionContext {
 }
 
 pub struct Sub<'a> {
-    depth: usize,
-    step: usize,
-    parent: &'a Step<'a>,
+    pub depth: usize,
+    pub step: usize,
+    pub parent: &'a Step<'a>,
 }
 
 pub enum Step<'a> {
@@ -85,6 +85,19 @@ impl<'a> Step<'a> {
                 }
             }
         }
+    }
+    fn get_depth(&self) -> usize {
+        match self {
+            &Self::Root(_) => 0,
+            &Self::Sub(Sub { depth, .. }) => depth,
+        }
+    }
+    fn append(&'a self, step: usize) -> Step<'a> {
+        Self::Sub(Sub {
+            depth: self.get_depth() + 1,
+            step: step,
+            parent: self,
+        })
     }
 }
 

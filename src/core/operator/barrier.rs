@@ -3,9 +3,19 @@ use crate::core::{Relation, Step};
 use std::marker::PhantomData;
 
 pub struct Barrier<C> {
-    inner: C,
+    pub(super) inner: C,
     depth: usize,
     step: usize,
+}
+
+impl<C> Barrier<C> {
+    pub(super) fn new(inner: C, depth: usize) -> Self {
+        Barrier {
+            inner,
+            depth,
+            step: 0,
+        }
+    }
 }
 
 impl<C: Op> Op for Barrier<C> {
@@ -24,11 +34,7 @@ impl<C: Op> Op for Barrier<C> {
 impl<'a, C: Op> Relation<'a, C> {
     pub fn barrier(self) -> Relation<'a, Barrier<C>> {
         Relation {
-            inner: Barrier {
-                inner: self.inner,
-                depth: self.depth,
-                step: 0,
-            },
+            inner: Barrier::new(self.inner, self.depth),
             context_id: self.context_id,
             depth: self.depth,
             phantom: PhantomData,
