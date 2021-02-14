@@ -1,6 +1,5 @@
 use crate::key::Key;
-use crate::Collection;
-use crate::CreationContext;
+use crate::{Collection, CreationContext};
 use std::collections::HashMap;
 
 #[test]

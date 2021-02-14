@@ -7,6 +7,7 @@ mod variable;
 
 use self::contextual::IsContext;
 use self::registrar::Registrar;
+pub use self::variable::Variable;
 use crate::core::key::Key;
 use crate::core::{ContextId, CreationContext};
 
