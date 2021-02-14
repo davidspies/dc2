@@ -232,7 +232,7 @@ impl<'b, C: Op> Relation<'b, C> {
                 inner: self.inner,
                 registrar: finalizer.registrar.clone(),
             },
-            depth: self.depth - 1,
+            depth: Ctx::get_depth(),
             context_id: self.context_id,
             phantom: PhantomData,
         }
