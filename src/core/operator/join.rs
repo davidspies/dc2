@@ -5,6 +5,7 @@ use crate::core::key::Key;
 use crate::core::monoid::Monoid;
 use crate::core::{Relation, Step};
 use std::collections::HashMap;
+use std::marker::PhantomData;
 use std::ops::Mul;
 
 struct Join<LC, RC, K, LD, LR, RD, RR> {
@@ -50,11 +51,11 @@ impl<
     }
 }
 
-impl<K: Key, D: Key, C: Op<D = (K, D)>> Relation<C> {
+impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
     pub fn join<C2: Op<D = (K, D2)>, D2: Key, OR: Monoid>(
         self,
-        other: Relation<C2>,
-    ) -> Relation<impl Op<D = (K, D, D2), R = OR>>
+        other: Relation<'a, C2>,
+    ) -> Relation<'a, impl Op<D = (K, D, D2), R = OR>>
     where
         C::R: Mul<C2::R, Output = OR>,
     {
@@ -67,6 +68,8 @@ impl<K: Key, D: Key, C: Op<D = (K, D)>> Relation<C> {
                 right_map: HashMap::new(),
             },
             context_id: self.context_id,
+            depth: self.depth.max(other.depth),
+            phantom: PhantomData,
         }
     }
 }

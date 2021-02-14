@@ -5,6 +5,7 @@ use crate::core::monoid::Monoid;
 use crate::core::{ContextId, CreationContext, ExecutionContext, Relation, Step};
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::marker::PhantomData;
 use std::mem;
 use std::rc::Rc;
 
@@ -71,7 +72,7 @@ impl<D: Key, R: Monoid> Op for InputCollection<D, R> {
 impl CreationContext {
     pub fn create_input<D: Key, R: Monoid>(
         &self,
-    ) -> (Input<D, R>, Relation<impl Op<D = D, R = R>>) {
+    ) -> (Input<D, R>, Relation<'static, impl Op<D = D, R = R>>) {
         let inner = Rc::new(RefCell::new(InputInner {
             step: Step(0),
             pending: HashMap::new(),
@@ -85,6 +86,8 @@ impl CreationContext {
             Relation {
                 inner: InputCollection(inner),
                 context_id: self.0,
+                depth: 0,
+                phantom: PhantomData,
             },
         )
     }

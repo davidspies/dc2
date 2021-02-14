@@ -2,6 +2,7 @@ use super::Op;
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
 use crate::core::{Relation, Step};
+use std::marker::PhantomData;
 
 struct Concat<C1, C2> {
     left: C1,
@@ -18,11 +19,11 @@ impl<D: Key, R: Monoid, C1: Op<D = D, R = R>, C2: Op<D = D, R = R>> Op for Conca
     }
 }
 
-impl<C: Op> Relation<C> {
+impl<'a, C: Op> Relation<'a, C> {
     pub fn concat<C2: Op<D = C::D, R = C::R>>(
         self,
         other: Relation<C2>,
-    ) -> Relation<impl Op<D = C::D, R = C::R>> {
+    ) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
         assert_eq!(self.context_id, other.context_id, "Context mismatch");
         Relation {
             inner: Concat {
@@ -30,6 +31,8 @@ impl<C: Op> Relation<C> {
                 right: other.inner,
             },
             context_id: self.context_id,
+            depth: self.depth.max(other.depth),
+            phantom: PhantomData,
         }
     }
 }

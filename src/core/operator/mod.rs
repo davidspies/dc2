@@ -5,6 +5,7 @@ mod join;
 mod map;
 mod reduce;
 mod split;
+mod subgraph;
 
 pub use self::dynamic::DynOp;
 pub use self::input::Input;

@@ -2,6 +2,7 @@ use super::Op;
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
 use crate::core::{Relation, Step};
+use std::marker::PhantomData;
 
 struct FlatMap<C, MF> {
     inner: C,
@@ -34,7 +35,7 @@ impl<
     }
 }
 
-impl<C: Op> Relation<C> {
+impl<'a, C: Op> Relation<'a, C> {
     pub fn flat_map_dr<
         F: Fn(C::D, C::R) -> I,
         D2: Key,
@@ -43,13 +44,15 @@ impl<C: Op> Relation<C> {
     >(
         self,
         f: F,
-    ) -> Relation<impl Op<D = D2, R = R2>> {
+    ) -> Relation<'a, impl Op<D = D2, R = R2>> {
         Relation {
             inner: FlatMap {
                 inner: self.inner,
                 op: f,
             },
             context_id: self.context_id,
+            depth: self.depth,
+            phantom: PhantomData,
         }
     }
 }

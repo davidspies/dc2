@@ -3,6 +3,7 @@ use crate::core::key::Key;
 use crate::core::monoid::Monoid;
 use crate::core::Relation;
 use crate::core::Step;
+use std::marker::PhantomData;
 
 pub struct DynOp<D, R>(Box<dyn DynOpT<D = D, R = R>>);
 
@@ -28,14 +29,16 @@ impl<D: Key, R: Monoid> Op for DynOp<D, R> {
     }
 }
 
-impl<C: Op> Relation<C> {
-    pub fn dynamic(self) -> Relation<DynOp<C::D, C::R>>
+impl<'a, C: Op> Relation<'a, C> {
+    pub fn dynamic(self) -> Relation<'a, DynOp<C::D, C::R>>
     where
         C: 'static,
     {
         Relation {
             inner: DynOp(Box::new(self.inner)),
             context_id: self.context_id,
+            depth: self.depth,
+            phantom: PhantomData,
         }
     }
 }

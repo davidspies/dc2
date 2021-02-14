@@ -81,7 +81,7 @@ impl<
     }
 }
 
-impl<K: Key, D: Key, C: Op<D = (K, D)>> Relation<C> {
+impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
     pub fn reduce<
         D2: Key,
         R2: Monoid,
@@ -91,7 +91,7 @@ impl<K: Key, D: Key, C: Op<D = (K, D)>> Relation<C> {
     >(
         self,
         proc: F,
-    ) -> Relation<impl Op<D = (K, D2), R = R2>> {
+    ) -> Relation<'a, impl Op<D = (K, D2), R = R2>> {
         Relation {
             inner: Reduce {
                 inner: self.inner,
@@ -101,6 +101,8 @@ impl<K: Key, D: Key, C: Op<D = (K, D)>> Relation<C> {
                 phantom: PhantomData,
             },
             context_id: self.context_id,
+            depth: self.depth,
+            phantom: PhantomData,
         }
     }
 }

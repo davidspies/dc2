@@ -4,6 +4,7 @@ use crate::core::iter::TupleableWith;
 use crate::core::{Relation, Step};
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::marker::PhantomData;
 use std::mem;
 use std::rc::Rc;
 
@@ -57,8 +58,8 @@ impl<C: Op> Op for Receiver<C> {
     }
 }
 
-impl<C: Op> Relation<C> {
-    pub fn split(self) -> Relation<Receiver<C>> {
+impl<'a, C: Op> Relation<'a, C> {
+    pub fn split(self) -> Relation<'a, Receiver<C>> {
         let data = Rc::new(RefCell::new(HashMap::new()));
         let source = Rc::new(RefCell::new(Source {
             source: self.inner,
@@ -68,6 +69,8 @@ impl<C: Op> Relation<C> {
         Relation {
             inner: Receiver { data, source },
             context_id: self.context_id,
+            depth: self.depth,
+            phantom: PhantomData,
         }
     }
 }

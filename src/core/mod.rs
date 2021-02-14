@@ -9,6 +9,7 @@ mod operator;
 
 pub use self::arrangement::Arrangement;
 pub use self::operator::{DynOp, Input, Op, Receiver};
+use std::marker::PhantomData;
 use std::sync::atomic::{self, AtomicUsize};
 
 static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
@@ -51,7 +52,9 @@ impl ExecutionContext {
 pub struct Step(usize);
 
 #[derive(Clone)]
-pub struct Relation<C> {
+pub struct Relation<'a, C> {
     inner: C,
     context_id: ContextId,
+    depth: usize,
+    phantom: PhantomData<&'a ()>,
 }

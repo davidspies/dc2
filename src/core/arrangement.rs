@@ -37,7 +37,7 @@ impl<C: Op> ArrangementInner<C::D, C::R, C> {
     }
 }
 
-impl<C: Op> Relation<C> {
+impl<C: Op> Relation<'static, C> {
     pub fn get_arrangement(self, context: &CreationContext) -> Arrangement<C::D, C::R, C> {
         assert_eq!(self.context_id, context.0, "Context mismatch");
         Arrangement {

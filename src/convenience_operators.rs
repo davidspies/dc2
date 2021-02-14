@@ -8,17 +8,19 @@ use std::iter;
 use std::ops::{Mul, Neg};
 
 pub type DynReceiver<D, R> = Receiver<DynOp<D, R>>;
-pub type Collection<D, R> = Relation<DynReceiver<D, R>>;
+pub type Collection<D, R> = Relation<'static, DynReceiver<D, R>>;
 
-impl<C: Op> Relation<C> {
+impl<'a, C: Op> Relation<'a, C> {
     pub fn get_dyn_arrangement(self, context: &CreationContext) -> Arrangement<C::D, C::R>
     where
+        'a: 'static,
         C: 'static,
     {
         self.dynamic().get_arrangement(context)
     }
     pub fn collect(self) -> Collection<C::D, C::R>
     where
+        'a: 'static,
         C: 'static,
     {
         self.dynamic().split()
@@ -26,31 +28,31 @@ impl<C: Op> Relation<C> {
     pub fn flat_map<F: Fn(C::D) -> I + 'static, D2: Key, I: IntoIterator<Item = D2>>(
         self,
         f: F,
-    ) -> Relation<impl Op<D = D2, R = C::R>> {
+    ) -> Relation<'a, impl Op<D = D2, R = C::R>> {
         self.flat_map_dr(move |x, r| f(x).into_iter().tuple_with(r))
     }
     pub fn map<F: Fn(C::D) -> D2 + 'static, D2: Key>(
         self,
         f: F,
-    ) -> Relation<impl Op<D = D2, R = C::R>> {
+    ) -> Relation<'a, impl Op<D = D2, R = C::R>> {
         self.flat_map(move |x| iter::once(f(x)))
     }
     pub fn filter<F: Fn(&C::D) -> bool + 'static>(
         self,
         f: F,
-    ) -> Relation<impl Op<D = C::D, R = C::R>> {
+    ) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
         self.flat_map(move |x| if f(&x) { Some(x) } else { None })
     }
     pub fn map_r<F: Fn(C::R) -> R2 + 'static, R2: Monoid>(
         self,
         f: F,
-    ) -> Relation<impl Op<D = C::D, R = R2>> {
+    ) -> Relation<'a, impl Op<D = C::D, R = R2>> {
         self.flat_map_dr(move |x, r| iter::once((x, f(r))))
     }
-    pub fn negate(self) -> Relation<impl Op<D = C::D, R = C::R>> {
+    pub fn negate(self) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
         self.map_r(Neg::neg)
     }
-    pub fn counts(self) -> Relation<impl Op<D = (C::D, C::R), R = isize>>
+    pub fn counts(self) -> Relation<'a, impl Op<D = (C::D, C::R), R = isize>>
     where
         C::R: Key,
     {
@@ -59,11 +61,11 @@ impl<C: Op> Relation<C> {
     }
 }
 
-impl<K: Key, V: Key, C: Op<D = (K, V)>> Relation<C> {
+impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
     pub fn semijoin<C2: Op<D = K, R = R2>, R2: Monoid, R3: Monoid>(
         self,
-        other: Relation<C2>,
-    ) -> Relation<impl Op<D = C::D, R = R3>>
+        other: Relation<'a, C2>,
+    ) -> Relation<'a, impl Op<D = C::D, R = R3>>
     where
         C::R: Mul<R2, Output = R3>,
     {
@@ -71,15 +73,15 @@ impl<K: Key, V: Key, C: Op<D = (K, V)>> Relation<C> {
     }
     pub fn antijoin<C2: Op<D = K, R = R2>, R2: Monoid>(
         self,
-        other: Relation<C2>,
-    ) -> Relation<impl Op<D = C::D, R = C::R>>
+        other: Relation<'a, C2>,
+    ) -> Relation<'a, impl Op<D = C::D, R = C::R>>
     where
         C::R: Mul<R2, Output = C::R>,
     {
         let this = self.split();
         this.clone().concat(this.semijoin(other).negate())
     }
-    pub fn group_min(self) -> Relation<impl Op<D = C::D, R = isize>>
+    pub fn group_min(self) -> Relation<'a, impl Op<D = C::D, R = isize>>
     where
         V: Ord,
     {
@@ -87,7 +89,7 @@ impl<K: Key, V: Key, C: Op<D = (K, V)>> Relation<C> {
             SingletonMap(xs.first_key_value().unwrap().0.clone())
         })
     }
-    pub fn group_max(self) -> Relation<impl Op<D = C::D, R = isize>>
+    pub fn group_max(self) -> Relation<'a, impl Op<D = C::D, R = isize>>
     where
         V: Ord,
     {
