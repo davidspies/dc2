@@ -2,7 +2,7 @@ use super::Op;
 use crate::core::{Relation, Step};
 use std::marker::PhantomData;
 
-pub(super) struct Barrier<C> {
+pub struct Barrier<C> {
     inner: C,
     depth: usize,
     step: usize,
@@ -22,7 +22,7 @@ impl<C: Op> Op for Barrier<C> {
 }
 
 impl<'a, C: Op> Relation<'a, C> {
-    pub(super) fn barrier(self) -> Relation<'a, Barrier<C>> {
+    pub fn barrier(self) -> Relation<'a, Barrier<C>> {
         Relation {
             inner: Barrier {
                 inner: self.inner,
