@@ -216,7 +216,7 @@ impl<S: Clone + Ord, C: Op> Op for Leave<S, C> {
 impl<'b, C: Op> Relation<'b, C> {
     pub fn leave<'a, Ctx: IsContext, S: 'static + Clone + Ord>(
         self,
-        finalizer: Finalizer<'b, Ctx, S>,
+        finalizer: &Finalizer<'b, Ctx, S>,
     ) -> Relation<'a, impl Op<D = C::D, R = C::R>>
     where
         'a: 'b,

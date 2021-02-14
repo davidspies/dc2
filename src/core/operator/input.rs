@@ -15,7 +15,7 @@ struct InputInner<D, R> {
     adding: HashMap<D, R>,
 }
 
-pub struct Input<D, R> {
+pub struct Input<D, R = isize> {
     inner: Rc<RefCell<InputInner<D, R>>>,
     context_id: ContextId,
 }

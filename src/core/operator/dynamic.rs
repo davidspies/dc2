@@ -5,7 +5,7 @@ use crate::core::Relation;
 use crate::core::Step;
 use std::marker::PhantomData;
 
-pub struct DynOp<D, R>(Box<dyn DynOpT<D = D, R = R>>);
+pub struct DynOp<D, R = isize>(Box<dyn DynOpT<D = D, R = R>>);
 
 trait DynOpT {
     type D: Key;

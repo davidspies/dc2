@@ -2,13 +2,13 @@ use crate::core::iter::TupleableWith;
 use crate::key::Key;
 use crate::map::{SingletonMap, UnitMap};
 use crate::monoid::Monoid;
-use crate::{Arrangement, CreationContext, DynOp, Op, Receiver, Relation};
+use crate::{Arrangement, CreationContext, DynOp, ExecutionContext, Input, Op, Receiver, Relation};
 use std::collections::BTreeMap;
 use std::iter;
 use std::ops::{Mul, Neg};
 
-pub type DynReceiver<D, R> = Receiver<DynOp<D, R>>;
-pub type Collection<D, R> = Relation<'static, DynReceiver<D, R>>;
+pub type DynReceiver<D, R = isize> = Receiver<DynOp<D, R>>;
+pub type Collection<'a, D, R = isize> = Relation<'a, DynReceiver<D, R>>;
 
 impl<'a, C: Op> Relation<'a, C> {
     pub fn get_dyn_arrangement(self, context: &CreationContext) -> Arrangement<C::D, C::R>
@@ -18,9 +18,8 @@ impl<'a, C: Op> Relation<'a, C> {
     {
         self.dynamic().get_arrangement(context)
     }
-    pub fn collect(self) -> Collection<C::D, C::R>
+    pub fn collect(self) -> Collection<'a, C::D, C::R>
     where
-        'a: 'static,
         C: 'static,
     {
         self.dynamic().split()
@@ -99,5 +98,14 @@ impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
         self.reduce(|_, xs: &BTreeMap<V, C::R>| {
             SingletonMap(xs.last_key_value().unwrap().0.clone())
         })
+    }
+}
+
+impl<D: Key> Input<D> {
+    pub fn insert(&self, context: &ExecutionContext, x: D) {
+        self.update(context, x, 1)
+    }
+    pub fn delete(&self, context: &ExecutionContext, x: D) {
+        self.update(context, x, -1)
     }
 }
