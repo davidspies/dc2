@@ -10,7 +10,7 @@ use std::mem;
 use std::rc::Rc;
 
 struct Source<C: Op> {
-    source: Barrier<C>,
+    inner: Barrier<C>,
     listeners: Vec<Rc<RefCell<HashMap<C::D, C::R>>>>,
 }
 
@@ -21,19 +21,19 @@ pub struct Receiver<C: Op> {
 
 impl<C: Op> Receiver<C> {
     pub(super) fn new(from: C, depth: usize) -> Self {
-        let source = Barrier::new(from, depth);
+        let inner = Barrier::new(from, depth);
         let data = Rc::new(RefCell::new(HashMap::new()));
         let source = Rc::new(RefCell::new(Source {
-            source,
+            inner,
             listeners: vec![Rc::clone(&data)],
         }));
         Receiver { data, source }
     }
     pub(super) fn get_inner(&self) -> Ref<C> {
-        Ref::map(self.source.borrow(), |r| &r.source.inner)
+        Ref::map(self.source.borrow(), |r| &r.inner.inner)
     }
     pub(super) fn get_inner_mut(&self) -> RefMut<C> {
-        RefMut::map(self.source.borrow_mut(), |r| &mut r.source.inner)
+        RefMut::map(self.source.borrow_mut(), |r| &mut r.inner.inner)
     }
 }
 
@@ -55,7 +55,7 @@ impl<C: Op> Op for Receiver<C> {
     fn flow<F: FnMut(C::D, C::R)>(&mut self, step: &Step, mut send: F) {
         let mut source = self.source.borrow_mut();
         let Source {
-            source: ref mut inner,
+            ref mut inner,
             ref listeners,
         } = &mut *source;
         inner.flow(step, |x, r| {
