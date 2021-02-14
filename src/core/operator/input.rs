@@ -10,7 +10,7 @@ use std::mem;
 use std::rc::Rc;
 
 struct InputInner<D, R> {
-    step: Step,
+    step: usize,
     pending: HashMap<D, R>,
     adding: HashMap<D, R>,
 }
@@ -38,7 +38,7 @@ impl<D, R> Clone for Input<D, R> {
     }
 }
 impl<D: Key, R: Monoid> InputInner<D, R> {
-    fn resolve(&mut self, step: Step) {
+    fn resolve(&mut self, step: usize) {
         assert!(self.step <= step);
         if self.step < step {
             for (x, r) in mem::take(&mut self.adding) {
@@ -52,8 +52,12 @@ impl<D: Key, R: Monoid> Op for InputInner<D, R> {
     type D = D;
     type R = R;
 
-    fn flow<F: FnMut(D, R)>(&mut self, step: Step, mut send: F) {
-        self.resolve(step);
+    fn flow<F: FnMut(D, R)>(&mut self, step: &Step, mut send: F) {
+        let root_step = match step {
+            &Step::Root(r) => r,
+            &Step::Sub(_) => panic!("Input not at root"),
+        };
+        self.resolve(root_step);
         for (x, r) in mem::take(&mut self.pending) {
             send(x, r);
         }
@@ -64,7 +68,7 @@ impl<D: Key, R: Monoid> Op for InputCollection<D, R> {
     type D = D;
     type R = R;
 
-    fn flow<F: FnMut(D, R)>(&mut self, step: Step, send: F) {
+    fn flow<F: FnMut(D, R)>(&mut self, step: &Step, send: F) {
         self.0.borrow_mut().flow(step, send)
     }
 }
@@ -74,7 +78,7 @@ impl CreationContext {
         &self,
     ) -> (Input<D, R>, Relation<'static, impl Op<D = D, R = R>>) {
         let inner = Rc::new(RefCell::new(InputInner {
-            step: Step(0),
+            step: 0,
             pending: HashMap::new(),
             adding: HashMap::new(),
         }));

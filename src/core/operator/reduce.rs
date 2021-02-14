@@ -30,7 +30,7 @@ impl<
     type D = (K, D2);
     type R = R2;
 
-    fn flow<F: FnMut((K, D2), R2)>(&mut self, step: Step, mut send: F) {
+    fn flow<F: FnMut((K, D2), R2)>(&mut self, step: &Step, mut send: F) {
         let mut changed_keys = HashSet::new();
         let Reduce {
             inner, input_maps, ..

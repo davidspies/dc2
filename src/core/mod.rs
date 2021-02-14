@@ -29,14 +29,14 @@ impl CreationContext {
 }
 
 pub struct ExecutionContext {
-    step: Step,
+    step: usize,
     context_id: ContextId,
 }
 
 impl CreationContext {
     pub fn begin(self) -> ExecutionContext {
         ExecutionContext {
-            step: Step(0),
+            step: 0,
             context_id: self.0,
         }
     }
@@ -44,12 +44,46 @@ impl CreationContext {
 
 impl ExecutionContext {
     pub fn commit(&mut self) {
-        self.step.0 += 1;
+        self.step += 1;
     }
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, PartialOrd, Ord)]
-pub struct Step(usize);
+pub struct Sub<'a> {
+    depth: usize,
+    step: usize,
+    parent: &'a Step<'a>,
+}
+
+pub enum Step<'a> {
+    Root(usize),
+    Sub(Sub<'a>),
+}
+
+impl<'a> Step<'a> {
+    fn get_last(&self) -> usize {
+        match self {
+            &Step::Root(s) => s,
+            &Step::Sub(Sub { step, .. }) => step,
+        }
+    }
+    fn step_for(&self, depth: usize) -> &Step {
+        match self {
+            &Self::Root(_) => self,
+            &Self::Sub(Sub {
+                depth: my_depth,
+                step: _,
+                ref parent,
+            }) => {
+                if my_depth == depth {
+                    self
+                } else {
+                    assert!(depth < my_depth);
+                    parent.step_for(depth)
+                }
+            }
+        }
+    }
+}
 
 #[derive(Clone)]
 pub struct Relation<'a, C> {

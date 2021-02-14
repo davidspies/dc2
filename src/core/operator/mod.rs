@@ -17,5 +17,5 @@ use crate::core::monoid::Monoid;
 pub trait Op {
     type D: Key;
     type R: Monoid;
-    fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: Step, send: F);
+    fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: &Step, send: F);
 }

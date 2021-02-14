@@ -11,7 +11,8 @@ use std::rc::Rc;
 struct Source<C: Op> {
     source: C,
     listeners: Vec<Rc<RefCell<HashMap<C::D, C::R>>>>,
-    step: Step,
+    depth: usize,
+    step: usize,
 }
 
 pub struct Receiver<C: Op> {
@@ -34,17 +35,19 @@ impl<C: Op> Op for Receiver<C> {
     type D = C::D;
     type R = C::R;
 
-    fn flow<F: FnMut(C::D, C::R)>(&mut self, step: Step, mut send: F) {
-        if self.source.borrow().step < step {
+    fn flow<F: FnMut(C::D, C::R)>(&mut self, step: &Step, mut send: F) {
+        let step_at_depth = step.step_for(self.source.borrow().depth);
+        if self.source.borrow().step < step_at_depth.get_last() {
             let mut source = self.source.borrow_mut();
             let Source {
                 source: ref mut inner,
                 ref listeners,
                 step: ref mut prev_step,
+                depth: _,
             } = &mut *source;
-            *prev_step = step;
+            *prev_step = step_at_depth.get_last();
             let mut changes = HashMap::new();
-            inner.flow(step, |x, r| changes.add(x, r));
+            inner.flow(step_at_depth, |x, r| changes.add(x, r));
             for (listener, changes) in listeners.iter().tuple_with(changes) {
                 let mut lborrowed = listener.borrow_mut();
                 for (x, r) in changes {
@@ -64,7 +67,8 @@ impl<'a, C: Op> Relation<'a, C> {
         let source = Rc::new(RefCell::new(Source {
             source: self.inner,
             listeners: vec![Rc::clone(&data)],
-            step: Step(0),
+            depth: self.depth,
+            step: 0,
         }));
         Relation {
             inner: Receiver { data, source },

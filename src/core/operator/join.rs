@@ -29,7 +29,7 @@ impl<
     type D = (K, LD, RD);
     type R = OR;
 
-    fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: Step, mut send: F) {
+    fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: &Step, mut send: F) {
         let Join {
             left,
             right,

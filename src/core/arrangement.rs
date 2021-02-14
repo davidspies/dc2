@@ -22,18 +22,18 @@ impl<C: Op> Arrangement<C::D, C::R, C> {
 struct ArrangementInner<D, R, C> {
     from: C,
     value: HashMap<D, R>,
-    step: Step,
+    step: usize,
 }
 
 impl<C: Op> ArrangementInner<C::D, C::R, C> {
-    fn flow<'a>(&'a mut self, step: Step) {
+    fn flow<'a>(&'a mut self, step: usize) {
         let ArrangementInner {
             ref mut from,
             ref mut value,
             step: ref mut cur_step,
         } = self;
         *cur_step = step;
-        from.flow(step, |x, r| value.add(x, r));
+        from.flow(&Step::Root(step), |x, r| value.add(x, r));
     }
 }
 
@@ -43,7 +43,7 @@ impl<C: Op> Relation<'static, C> {
         Arrangement {
             inner: RefCell::new(ArrangementInner {
                 from: self.inner,
-                step: Step(0),
+                step: 0,
                 value: HashMap::new(),
             }),
             context_id: self.context_id,

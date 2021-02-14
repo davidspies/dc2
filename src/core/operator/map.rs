@@ -22,7 +22,7 @@ impl<
     type D = D2;
     type R = R2;
 
-    fn flow<F: FnMut(D2, R2)>(&mut self, step: Step, mut send: F) {
+    fn flow<F: FnMut(D2, R2)>(&mut self, step: &Step, mut send: F) {
         let FlatMap {
             ref mut inner,
             ref op,
