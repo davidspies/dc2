@@ -26,7 +26,7 @@ impl<
         OR: Monoid,
     > Op for Join<LC, RC, K, LD, LR, RD, RR>
 {
-    type D = (K, LD, RD);
+    type D = (K, (LD, RD));
     type R = OR;
 
     fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: &Step, mut send: F) {
@@ -38,13 +38,19 @@ impl<
         } = self;
         left.flow(step, |(k, lx), lr| {
             for (rx, rr) in right_map.get(&k).borrow_or_default().iter() {
-                send((k.clone(), lx.clone(), rx.clone()), lr.clone() * rr.clone());
+                send(
+                    (k.clone(), (lx.clone(), rx.clone())),
+                    lr.clone() * rr.clone(),
+                );
             }
             left_map.add((k, lx), lr);
         });
         right.flow(step, |(k, rx), rr| {
             for (lx, lr) in left_map.get(&k).borrow_or_default().iter() {
-                send((k.clone(), lx.clone(), rx.clone()), lr.clone() * rr.clone());
+                send(
+                    (k.clone(), (lx.clone(), rx.clone())),
+                    lr.clone() * rr.clone(),
+                );
             }
             right_map.add((k, rx), rr);
         });
@@ -55,7 +61,7 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
     pub fn join<C2: Op<D = (K, D2)>, D2: Key, OR: Monoid>(
         self,
         other: Relation<'a, C2>,
-    ) -> Relation<'a, impl Op<D = (K, D, D2), R = OR>>
+    ) -> Relation<'a, impl Op<D = (K, (D, D2)), R = OR>>
     where
         C::R: Mul<C2::R, Output = OR>,
     {

@@ -78,7 +78,7 @@ fn distances_gen<V: Key, T: Distance>(
             closure_prev
                 .map(|((l, r), d)| (r, (l, d)))
                 .join(edges)
-                .map(|(_, (l, d), r)| ((l, r), d.increment())),
+                .map(|(_, ((l, d), r))| ((l, r), d.increment())),
         )
         .group_min()
         .split();

@@ -73,7 +73,7 @@ impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
     where
         C::R: Mul<R2, Output = R3>,
     {
-        self.join(other.map(|x| (x, ()))).map(|(k, x, ())| (k, x))
+        self.join(other.map(|x| (x, ()))).map(|(k, (x, ()))| (k, x))
     }
     pub fn antijoin<C2: Op<D = K, R = R2>, R2: Monoid>(
         self,
