@@ -215,3 +215,33 @@ impl<K1: Eq + Hash, K2, V, M: IsRemoveMap<K2, V>> IsRemoveMap<(K1, K2), V> for H
         Some(v)
     }
 }
+
+pub trait AssertOnes {
+    type Result;
+
+    fn assert_ones(self) -> Self::Result;
+}
+
+pub trait HasOne {
+    fn is_one(&self) -> bool;
+}
+
+impl HasOne for isize {
+    fn is_one(&self) -> bool {
+        *self == 1
+    }
+}
+
+impl HasOne for &isize {
+    fn is_one(&self) -> bool {
+        **self == 1
+    }
+}
+
+impl<K, R: HasOne, I: Iterator<Item = (K, R)>> AssertOnes for I {
+    type Result = impl Iterator<Item = K>;
+
+    fn assert_ones(self) -> Self::Result {
+        self.map(|(k, r)| if r.is_one() { k } else { panic!("Not a one") })
+    }
+}

@@ -1,4 +1,5 @@
 #![feature(map_first_last)]
+#![feature(type_alias_impl_trait)]
 
 mod convenience_operators;
 mod core;
