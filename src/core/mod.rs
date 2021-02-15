@@ -108,3 +108,10 @@ pub struct Relation<'a, C> {
     depth: usize,
     phantom: PhantomData<&'a ()>,
 }
+
+impl<'a, C> Relation<'a, C> {
+    //TODO Placeholder
+    pub fn named(self, _name: String) -> Self {
+        self
+    }
+}
