@@ -7,7 +7,7 @@ fn it_works() {
     let creation = CreationContext::new();
     let (sender, v) = creation.create_input::<usize, isize>();
     let c = v.map(|x: usize| x + 1);
-    let outp = c.get_arrangement(&creation);
+    let outp = c.get_arrangement::<HashMap<_, _>>(&creation);
     let mut execution = creation.begin();
     sender.insert(&execution, 1);
     sender.insert(&execution, 2);
@@ -91,7 +91,7 @@ fn test_transitive_closure() {
     let mut creation = CreationContext::new();
     let (edge_input, edges) = creation.create_input::<(char, char), isize>();
     let res = transitive_closure_acyclic(edges.collect(), &mut creation);
-    let outp = res.get_arrangement(&creation);
+    let outp = res.get_arrangement::<HashMap<_, _>>(&creation);
     let mut execution = creation.begin();
     edge_input.insert(&execution, ('A', 'B'));
     edge_input.insert(&execution, ('B', 'C'));
@@ -169,7 +169,7 @@ fn test_transitive_closure_distances() {
     let mut creation = CreationContext::new();
     let (edge_input, edges) = creation.create_input::<(char, char), isize>();
     let res = distances(edges.collect(), &mut creation);
-    let outp = res.get_arrangement(&creation);
+    let outp = res.get_arrangement::<HashMap<_, _>>(&creation);
     let mut execution = creation.begin();
     edge_input.insert(&execution, ('A', 'B'));
     edge_input.insert(&execution, ('B', 'C'));
@@ -232,7 +232,7 @@ fn test_transitive_closure_cyclic() {
     let mut creation = CreationContext::new();
     let (edge_input, edges) = creation.create_input::<(char, char), isize>();
     let res = distances(edges.collect(), &mut creation);
-    let outp = res.get_arrangement(&creation);
+    let outp = res.get_arrangement::<HashMap<_, _>>(&creation);
     let mut execution = creation.begin();
     edge_input.insert(&execution, ('A', 'B'));
     edge_input.insert(&execution, ('B', 'C'));
