@@ -10,6 +10,7 @@ use std::ops::{Mul, Neg};
 pub type DynReceiver<D, R = isize> = Receiver<DynOp<D, R>>;
 pub type Collection<'a, D, R = isize> = Relation<'a, DynReceiver<D, R>>;
 pub type MapMapArrangement<K, V, R = isize> = Arrangement<(K, V), R, HashMap<K, HashMap<V, R>>>;
+pub type OrderedArrangement<K, V, R = isize> = Arrangement<(K, V), R, BTreeMap<K, HashMap<V, R>>>;
 
 impl<'a, C: Op> Relation<'a, C> {
     pub fn get_dyn_arrangement(self, context: &CreationContext) -> Arrangement<C::D, C::R>
