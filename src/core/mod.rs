@@ -111,7 +111,7 @@ pub struct Relation<'a, C> {
 
 impl<'a, C> Relation<'a, C> {
     //TODO Placeholder
-    pub fn named(self, _name: String) -> Self {
+    pub fn named(self, _name: &str) -> Self {
         self
     }
 }
