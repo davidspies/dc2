@@ -4,7 +4,12 @@ use crate::core::operator::{DynOp, Op};
 use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
 
-pub struct Arrangement<D, R, M: IsAddMap<D, R> = HashMap<D, R>, C: Op<D = D, R = R> = DynOp<D, R>> {
+pub struct Arrangement<
+    D,
+    R = isize,
+    M: IsAddMap<D, R> = HashMap<D, R>,
+    C: Op<D = D, R = R> = DynOp<D, R>,
+> {
     inner: RefCell<ArrangementInner<D, R, M, C>>,
     context_id: ContextId,
 }
