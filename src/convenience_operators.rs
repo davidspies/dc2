@@ -2,7 +2,10 @@ use crate::core::iter::TupleableWith;
 use crate::key::Key;
 use crate::map::{SingletonMap, UnitMap};
 use crate::monoid::Monoid;
-use crate::{Arrangement, CreationContext, DynOp, ExecutionContext, Input, Op, Receiver, Relation};
+use crate::{
+    Arrangement, CreationContext, DynOp, ExecutionContext, Input, IsReduce, Op, Receiver,
+    ReduceOutput, Relation,
+};
 use std::collections::{BTreeMap, HashMap};
 use std::iter;
 use std::ops::{Mul, Neg};
@@ -11,6 +14,7 @@ pub type DynReceiver<D, R = isize> = Receiver<DynOp<D, R>>;
 pub type Collection<'a, D, R = isize> = Relation<'a, DynReceiver<D, R>>;
 pub type MapMapArrangement<K, V, R = isize> = Arrangement<(K, V), R, HashMap<K, HashMap<V, R>>>;
 pub type OrderedArrangement<K, V, R = isize> = Arrangement<(K, V), R, BTreeMap<K, HashMap<V, R>>>;
+pub type MappingArrangement<K, V> = Box<dyn ReduceOutput<K = K, M = SingletonMap<V>>>;
 
 impl<'a, C: Op> Relation<'a, C> {
     pub fn get_dyn_arrangement(self, context: &CreationContext) -> Arrangement<C::D, C::R>
@@ -49,7 +53,12 @@ impl<'a, C: Op> Relation<'a, C> {
     pub fn negate(self) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
         self.map_r(Neg::neg)
     }
-    pub fn counts(self) -> Relation<'a, impl Op<D = (C::D, C::R), R = isize>>
+    pub fn counts(
+        self,
+    ) -> Relation<
+        'a,
+        impl Op<D = (C::D, C::R), R = isize> + IsReduce<K = C::D, M = SingletonMap<C::R>>,
+    >
     where
         C::R: Key,
     {
@@ -63,6 +72,12 @@ impl<'a, C: Op> Relation<'a, C> {
         self.map(|x| (x, ()))
             .reduce(|_, _: &UnitMap<C::R>| UnitMap(1))
             .map(|(k, ())| k)
+    }
+    pub fn get_dyn_reduce_output(self) -> Box<dyn ReduceOutput<K = C::K, M = C::M>>
+    where
+        C: IsReduce,
+    {
+        Box::new(self.get_reduce_output())
     }
 }
 
@@ -86,7 +101,9 @@ impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
         let this = self.split();
         this.clone().concat(this.semijoin(other).negate())
     }
-    pub fn group_min(self) -> Relation<'a, impl Op<D = C::D, R = isize>>
+    pub fn group_min(
+        self,
+    ) -> Relation<'a, impl Op<D = C::D, R = isize> + IsReduce<K = K, M = SingletonMap<V>>>
     where
         V: Ord,
     {
@@ -94,7 +111,9 @@ impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
             SingletonMap(xs.first_key_value().unwrap().0.clone())
         })
     }
-    pub fn group_max(self) -> Relation<'a, impl Op<D = C::D, R = isize>>
+    pub fn group_max(
+        self,
+    ) -> Relation<'a, impl Op<D = C::D, R = isize> + IsReduce<K = K, M = SingletonMap<V>>>
     where
         V: Ord,
     {

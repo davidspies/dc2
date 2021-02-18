@@ -10,6 +10,7 @@ pub mod subgraph;
 
 pub use self::dynamic::DynOp;
 pub use self::input::Input;
+pub use self::reduce::{IsReduce, ReduceOutput};
 pub use self::split::Receiver;
 use super::Step;
 use crate::core::key::Key;

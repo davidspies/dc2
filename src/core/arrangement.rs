@@ -12,9 +12,7 @@ pub struct Arrangement<D, R, M: IsAddMap<D, R> = HashMap<D, R>, C: Op<D = D, R =
 impl<C: Op, M: IsAddMap<C::D, C::R>> Arrangement<C::D, C::R, M, C> {
     pub fn read<'a>(&'a self, context: &'a ExecutionContext) -> Ref<'a, M> {
         assert_eq!(self.context_id, context.context_id, "Context mismatch");
-        if self.inner.borrow().step < context.step {
-            self.inner.borrow_mut().flow(context.step);
-        }
+        self.inner.borrow_mut().flow(context.step);
         Ref::map(self.inner.borrow(), |i| &i.value)
     }
 }
@@ -32,8 +30,10 @@ impl<C: Op, M: IsAddMap<C::D, C::R>> ArrangementInner<C::D, C::R, M, C> {
             ref mut value,
             step: ref mut cur_step,
         } = self;
-        *cur_step = step;
-        from.flow(&Step::Root(step), |x, r| value.add(x, r));
+        if *cur_step < step {
+            *cur_step = step;
+            from.flow(&Step::Root(step), |x, r| value.add(x, r));
+        }
     }
 }
 

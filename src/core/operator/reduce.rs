@@ -2,13 +2,14 @@ use super::Op;
 use crate::core::is_map::{IsAddMap, IsDiscardMap, IsMap, IsRemoveMap};
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
-use crate::core::Relation;
-use crate::core::Step;
+use crate::core::{ExecutionContext, Relation, Step};
+use std::cell::{Ref, RefCell};
 use std::collections::{hash_map, HashMap, HashSet};
 use std::marker::PhantomData;
 use std::mem;
+use std::ops::Deref;
 
-pub(in crate::core) struct Reduce<D2, R2, C, K, M1, M2, F: Fn(&K, &M1) -> M2> {
+pub struct Reduce<D2, R2, C, K, M1, M2, F: Fn(&K, &M1) -> M2> {
     inner: C,
     input_maps: HashMap<K, M1>,
     output_maps: HashMap<K, M2>,
@@ -25,12 +26,9 @@ impl<
         MF: Fn(&K, &M1) -> M2 + 'static,
         D2: Key,
         R2: Monoid,
-    > Op for Reduce<D2, R2, C, K, M1, M2, MF>
+    > Reduce<D2, R2, C, K, M1, M2, MF>
 {
-    type D = (K, D2);
-    type R = R2;
-
-    fn flow<F: FnMut((K, D2), R2)>(&mut self, step: &Step, mut send: F) {
+    fn flow_inner<F: FnMut((K, D2), R2)>(&mut self, step: &Step, mut send: F, sending: bool) {
         let mut changed_keys = HashSet::new();
         let Reduce {
             inner, input_maps, ..
@@ -64,20 +62,43 @@ impl<
                             )
                         }
                     };
-                    new_map_ref.foreach(|x, r| {
-                        let or = old_map.remove(x).unwrap_or_default();
-                        let diff = r.clone() - or;
-                        if !diff.is_zero() {
-                            send((k.clone(), x.clone()), diff)
-                        }
-                    });
+                    if sending {
+                        new_map_ref.foreach(|x, r| {
+                            let or = old_map.remove(x).unwrap_or_default();
+                            let diff = r.clone() - or;
+                            if !diff.is_zero() {
+                                send((k.clone(), x.clone()), diff)
+                            }
+                        });
+                    }
                     old_map
                 }
             };
-            for (x, r) in old_map.into_iter() {
-                send((k.clone(), x), -r)
+            if sending {
+                for (x, r) in old_map.into_iter() {
+                    send((k.clone(), x), -r)
+                }
             }
         }
+    }
+}
+
+impl<
+        C: Op<D = (K, D1)>,
+        K: Key,
+        D1,
+        M1: IsAddMap<D1, C::R> + 'static,
+        M2: IsMap<D2, R2> + 'static,
+        MF: Fn(&K, &M1) -> M2 + 'static,
+        D2: Key,
+        R2: Monoid,
+    > Op for Reduce<D2, R2, C, K, M1, M2, MF>
+{
+    type D = (K, D2);
+    type R = R2;
+
+    fn flow<F: FnMut((K, D2), R2)>(&mut self, step: &Step, send: F) {
+        self.flow_inner(step, send, true)
     }
 }
 
@@ -85,13 +106,13 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
     pub fn reduce<
         D2: Key,
         R2: Monoid,
-        F: Fn(&K, &M1) -> M2 + 'static,
+        MF: Fn(&K, &M1) -> M2 + 'static,
         M1: IsAddMap<D, C::R> + 'static,
         M2: IsMap<D2, R2> + 'static,
     >(
         self,
-        proc: F,
-    ) -> Relation<'a, impl Op<D = (K, D2), R = R2>> {
+        proc: MF,
+    ) -> Relation<'a, impl IsReduce<K = K, M = M2> + Op<D = (K, D2), R = R2>> {
         Relation {
             inner: Reduce {
                 inner: self.inner,
@@ -104,5 +125,65 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
             depth: self.depth,
             phantom: PhantomData,
         }
+    }
+}
+
+pub trait IsReduce {
+    type K;
+    type M;
+    fn read_ref<'a>(
+        this: &'a RefCell<Self>,
+        context: &'a ExecutionContext,
+    ) -> Ref<'a, HashMap<Self::K, Self::M>>;
+}
+
+impl<
+        K: Key,
+        D1: Key,
+        D2: Key,
+        R2: Monoid,
+        C: Op<D = (K, D1)>,
+        F: Fn(&K, &M1) -> M2 + 'static,
+        M1: IsAddMap<D1, C::R> + 'static,
+        M2: IsMap<D2, R2> + 'static,
+    > IsReduce for Reduce<D2, R2, C, K, M1, M2, F>
+{
+    type K = K;
+    type M = M2;
+    fn read_ref<'a>(
+        this: &'a RefCell<Self>,
+        context: &'a ExecutionContext,
+    ) -> Ref<'a, HashMap<K, M2>> {
+        this.borrow_mut()
+            .flow_inner(&Step::Root(context.step), |_, _| {}, false);
+        Ref::map(this.borrow(), |r| &r.output_maps)
+    }
+}
+
+impl<'a, C: IsReduce> Relation<'a, C> {
+    pub fn get_reduce_output(self) -> impl ReduceOutput<K = C::K, M = C::M> {
+        RefCell::new(self.inner)
+    }
+}
+
+pub trait ReduceOutput {
+    type K;
+    type M;
+    fn read<'a>(&'a self, context: &'a ExecutionContext) -> Ref<'a, HashMap<Self::K, Self::M>>;
+}
+
+impl<T: ReduceOutput> ReduceOutput for Box<T> {
+    type K = T::K;
+    type M = T::M;
+    fn read<'a>(&'a self, context: &'a ExecutionContext) -> Ref<'a, HashMap<T::K, T::M>> {
+        <Box<T> as Deref>::deref(self).read(context)
+    }
+}
+
+impl<C: IsReduce> ReduceOutput for RefCell<C> {
+    type K = C::K;
+    type M = C::M;
+    fn read<'a>(&'a self, context: &'a ExecutionContext) -> Ref<'a, HashMap<C::K, C::M>> {
+        C::read_ref(self, context)
     }
 }

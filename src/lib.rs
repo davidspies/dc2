@@ -6,11 +6,11 @@ mod core;
 pub mod map;
 
 pub use self::convenience_operators::{
-    Collection, DynReceiver, MapMapArrangement, OrderedArrangement,
+    Collection, DynReceiver, MapMapArrangement, MappingArrangement, OrderedArrangement,
 };
 pub use self::core::{
     borrow, emptyable, key, monoid, subgraph, Arrangement, CreationContext, DynOp,
-    ExecutionContext, Input, Op, Receiver, Relation,
+    ExecutionContext, Input, IsReduce, Op, Receiver, ReduceOutput, Relation,
 };
 
 #[cfg(test)]

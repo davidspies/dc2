@@ -8,7 +8,7 @@ pub mod monoid;
 mod operator;
 
 pub use self::arrangement::Arrangement;
-pub use self::operator::{subgraph, DynOp, Input, Op, Receiver};
+pub use self::operator::{subgraph, DynOp, Input, IsReduce, Op, Receiver, ReduceOutput};
 use std::marker::PhantomData;
 use std::sync::atomic::{self, AtomicUsize};
 
