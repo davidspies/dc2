@@ -16,6 +16,11 @@ impl<C> Barrier<C> {
             step: 0,
         }
     }
+    pub(super) fn dirty(&self, step: &Step) -> bool {
+        let step_for_depth = step.step_for(self.depth);
+        let against = step_for_depth.get_last();
+        self.step < against
+    }
 }
 
 impl<C: Op> Op for Barrier<C> {

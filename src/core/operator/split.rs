@@ -53,16 +53,18 @@ impl<C: Op> Op for Receiver<C> {
     type R = C::R;
 
     fn flow<F: FnMut(C::D, C::R)>(&mut self, step: &Step, mut send: F) {
-        let mut source = self.source.borrow_mut();
-        let Source {
-            ref mut inner,
-            ref listeners,
-        } = &mut *source;
-        inner.flow(step, |x, r| {
-            for (listener, (x, r)) in listeners.iter().tuple_with((x, r)) {
-                listener.borrow_mut().add(x, r);
-            }
-        });
+        if self.source.borrow().inner.dirty(step) {
+            let mut source = self.source.borrow_mut();
+            let Source {
+                ref mut inner,
+                ref listeners,
+            } = &mut *source;
+            inner.flow(step, |x, r| {
+                for (listener, (x, r)) in listeners.iter().tuple_with((x, r)) {
+                    listener.borrow_mut().add(x, r);
+                }
+            });
+        }
         for (x, r) in mem::take(&mut *self.data.borrow_mut()) {
             send(x, r)
         }
