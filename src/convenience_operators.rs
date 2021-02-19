@@ -76,6 +76,7 @@ impl<'a, C: Op> Relation<'a, C> {
     pub fn get_dyn_reduce_output(self) -> Box<dyn ReduceOutput<K = C::K, M = C::M>>
     where
         C: IsReduce,
+        'a: 'static,
     {
         Box::new(self.get_reduce_output())
     }

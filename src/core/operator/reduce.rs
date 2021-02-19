@@ -160,8 +160,9 @@ impl<
     }
 }
 
-impl<'a, C: IsReduce> Relation<'a, C> {
+impl<C: IsReduce> Relation<'static, C> {
     pub fn get_reduce_output(self) -> impl ReduceOutput<K = C::K, M = C::M> {
+        assert_eq!(self.depth, 0);
         RefCell::new(self.inner)
     }
 }
