@@ -1,9 +1,10 @@
+use super::split::{Receiver, SourceRef};
 use super::Op;
 use crate::core::is_map::{IsAddMap, IsDiscardMap, IsMap, IsRemoveMap};
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
-use crate::core::{ExecutionContext, Relation, Step};
-use std::cell::{Ref, RefCell};
+use crate::core::{ContextId, ExecutionContext, Relation, Step};
+use std::cell::Ref;
 use std::collections::{hash_map, HashMap, HashSet};
 use std::marker::PhantomData;
 use std::mem;
@@ -111,10 +112,7 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
 pub trait IsReduce {
     type K;
     type M;
-    fn read_ref<'a>(
-        this: &'a RefCell<Self>,
-        context: &'a ExecutionContext,
-    ) -> Ref<'a, HashMap<Self::K, Self::M>>;
+    fn get_ref(&self) -> &HashMap<Self::K, Self::M>;
 }
 
 impl<
@@ -130,19 +128,39 @@ impl<
 {
     type K = K;
     type M = M2;
-    fn read_ref<'a>(
-        this: &'a RefCell<Self>,
-        context: &'a ExecutionContext,
-    ) -> Ref<'a, HashMap<K, M2>> {
-        this.borrow_mut().flow(&Step::Root(context.step), |_, _| {});
-        Ref::map(this.borrow(), |r| &r.output_maps)
+    fn get_ref<'a>(&'a self) -> &'a HashMap<K, M2> {
+        &self.output_maps
     }
 }
 
-impl<C: IsReduce> Relation<'static, C> {
-    pub fn get_reduce_output(self) -> impl ReduceOutput<K = C::K, M = C::M> {
+impl<C: IsReduce + Op> Relation<'static, C> {
+    pub fn split_reduce_output(
+        self,
+    ) -> (
+        Relation<'static, Receiver<C>>,
+        impl ReduceOutput<K = C::K, M = C::M>,
+    ) {
         assert_eq!(self.depth, 0);
-        RefCell::new(self.inner)
+        let context_id = self.context_id;
+        let r = self.split();
+        let inner = r.inner.get_source_ref();
+        (r, ReduceOutputImpl { context_id, inner })
+    }
+}
+
+pub struct ReduceOutputImpl<C: Op> {
+    context_id: ContextId,
+    inner: SourceRef<C>,
+}
+
+impl<C: IsReduce + Op> ReduceOutput for ReduceOutputImpl<C> {
+    type K = C::K;
+    type M = C::M;
+
+    fn read<'a>(&'a self, context: &'a ExecutionContext) -> Ref<'a, HashMap<C::K, C::M>> {
+        assert_eq!(self.context_id, context.context_id, "Context mismatch");
+        self.inner.propagate(&Step::Root(context.step));
+        Ref::map(self.inner.get_inner(), IsReduce::get_ref)
     }
 }
 
@@ -157,13 +175,5 @@ impl<T: ReduceOutput> ReduceOutput for Box<T> {
     type M = T::M;
     fn read<'a>(&'a self, context: &'a ExecutionContext) -> Ref<'a, HashMap<T::K, T::M>> {
         <Box<T> as Deref>::deref(self).read(context)
-    }
-}
-
-impl<C: IsReduce> ReduceOutput for RefCell<C> {
-    type K = C::K;
-    type M = C::M;
-    fn read<'a>(&'a self, context: &'a ExecutionContext) -> Ref<'a, HashMap<C::K, C::M>> {
-        C::read_ref(self, context)
     }
 }
