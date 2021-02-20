@@ -117,6 +117,28 @@ impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
     }
 }
 
+impl<K: Key, V: Key, C: Op<D = (K, V), R = isize>> Relation<'static, C> {
+    pub fn assert_1to1_with_output(
+        self,
+    ) -> (
+        Relation<'static, impl Op<D = C::D, R = isize>>,
+        impl ReduceOutput<K = K, M = SingletonMap<V>>,
+    ) {
+        self.reduce(|_, m: &HashMap<V, C::R>| {
+            let mut iter = m.iter();
+            match iter.next() {
+                None => panic!("Empty map"),
+                Some((v, &r)) => {
+                    assert!(iter.next().is_none());
+                    assert_eq!(r, 1);
+                    SingletonMap(v.clone())
+                }
+            }
+        })
+        .split_reduce_output()
+    }
+}
+
 impl<D: Key> Input<D> {
     pub fn insert(&self, context: &ExecutionContext, x: D) {
         self.update(context, x, 1)
