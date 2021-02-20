@@ -26,9 +26,12 @@ impl<
         MF: Fn(&K, &M1) -> M2 + 'static,
         D2: Key,
         R2: Monoid,
-    > Reduce<D2, R2, C, K, M1, M2, MF>
+    > Op for Reduce<D2, R2, C, K, M1, M2, MF>
 {
-    fn flow_inner<F: FnMut((K, D2), R2)>(&mut self, step: &Step, mut send: F, sending: bool) {
+    type D = (K, D2);
+    type R = R2;
+
+    fn flow<F: FnMut((K, D2), R2)>(&mut self, step: &Step, mut send: F) {
         let mut changed_keys = HashSet::new();
         let Reduce {
             inner, input_maps, ..
@@ -62,43 +65,20 @@ impl<
                             )
                         }
                     };
-                    if sending {
-                        new_map_ref.foreach(|x, r| {
-                            let or = old_map.remove(x).unwrap_or_default();
-                            let diff = r.clone() - or;
-                            if !diff.is_zero() {
-                                send((k.clone(), x.clone()), diff)
-                            }
-                        });
-                    }
+                    new_map_ref.foreach(|x, r| {
+                        let or = old_map.remove(x).unwrap_or_default();
+                        let diff = r.clone() - or;
+                        if !diff.is_zero() {
+                            send((k.clone(), x.clone()), diff)
+                        }
+                    });
                     old_map
                 }
             };
-            if sending {
-                for (x, r) in old_map.into_iter() {
-                    send((k.clone(), x), -r)
-                }
+            for (x, r) in old_map.into_iter() {
+                send((k.clone(), x), -r)
             }
         }
-    }
-}
-
-impl<
-        C: Op<D = (K, D1)>,
-        K: Key,
-        D1,
-        M1: IsAddMap<D1, C::R> + 'static,
-        M2: IsMap<D2, R2> + 'static,
-        MF: Fn(&K, &M1) -> M2 + 'static,
-        D2: Key,
-        R2: Monoid,
-    > Op for Reduce<D2, R2, C, K, M1, M2, MF>
-{
-    type D = (K, D2);
-    type R = R2;
-
-    fn flow<F: FnMut((K, D2), R2)>(&mut self, step: &Step, send: F) {
-        self.flow_inner(step, send, true)
     }
 }
 
@@ -154,8 +134,7 @@ impl<
         this: &'a RefCell<Self>,
         context: &'a ExecutionContext,
     ) -> Ref<'a, HashMap<K, M2>> {
-        this.borrow_mut()
-            .flow_inner(&Step::Root(context.step), |_, _| {}, false);
+        this.borrow_mut().flow(&Step::Root(context.step), |_, _| {});
         Ref::map(this.borrow(), |r| &r.output_maps)
     }
 }
