@@ -3,7 +3,7 @@ use super::Op;
 use crate::core::is_map::{IsAddMap, IsDiscardMap, IsMap, IsRemoveMap};
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
-use crate::core::{ContextId, ExecutionContext, Relation, Step};
+use crate::core::{ContextId, CreationContext, ExecutionContext, Relation, Step};
 use std::cell::Ref;
 use std::collections::{hash_map, HashMap, HashSet};
 use std::marker::PhantomData;
@@ -136,10 +136,12 @@ impl<
 impl<C: IsReduce + Op> Relation<'static, C> {
     pub fn split_reduce_output(
         self,
+        context: &CreationContext,
     ) -> (
         Relation<'static, Receiver<C>>,
         impl ReduceOutput<K = C::K, M = C::M>,
     ) {
+        assert_eq!(self.context_id, context.0, "Context mismatch");
         assert_eq!(self.depth, 0);
         let context_id = self.context_id;
         let r = self.split();

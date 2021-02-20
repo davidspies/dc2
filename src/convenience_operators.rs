@@ -120,6 +120,7 @@ impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
 impl<K: Key, V: Key, C: Op<D = (K, V), R = isize>> Relation<'static, C> {
     pub fn assert_1to1_with_output(
         self,
+        context: &CreationContext,
     ) -> (
         Relation<'static, impl Op<D = C::D, R = isize>>,
         impl ReduceOutput<K = K, M = SingletonMap<V>>,
@@ -135,7 +136,7 @@ impl<K: Key, V: Key, C: Op<D = (K, V), R = isize>> Relation<'static, C> {
                 }
             }
         })
-        .split_reduce_output()
+        .split_reduce_output(context)
     }
 }
 
