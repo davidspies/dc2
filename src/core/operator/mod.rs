@@ -7,6 +7,7 @@ mod map;
 mod reduce;
 mod split;
 pub mod subgraph;
+mod triangles;
 
 pub use self::dynamic::DynOp;
 pub use self::input::Input;
