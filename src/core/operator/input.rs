@@ -53,10 +53,7 @@ impl<D: Key, R: Monoid> Op for InputInner<D, R> {
     type R = R;
 
     fn flow<F: FnMut(D, R)>(&mut self, step: &Step, mut send: F) {
-        let root_step = match step {
-            &Step::Root(r) => r,
-            &Step::Sub(_) => panic!("Input not at root"),
-        };
+        let root_step = step.step_for(0).get_last();
         self.resolve(root_step);
         for (x, r) in mem::take(&mut self.pending) {
             send(x, r);
