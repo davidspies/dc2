@@ -7,7 +7,7 @@ use std::marker::PhantomData;
 
 pub struct DynOp<D, R = isize>(Box<dyn DynOpT<D = D, R = R>>);
 
-trait DynOpT {
+trait DynOpT: 'static {
     type D: Key;
     type R: Monoid;
     fn flow_dyn(&mut self, step: &Step, send: &mut dyn FnMut(Self::D, Self::R));

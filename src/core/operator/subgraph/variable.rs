@@ -27,8 +27,8 @@ impl<'a, S: Key + Ord, D: Key, R: Monoid> Variable<'a, S, D, R> {
 }
 
 impl<'a, Ctx: IsContext, S: Key + Ord> SubContext<'a, Ctx, S> {
-    pub fn variable<D: Key, R: Monoid>(
-        &mut self,
+    pub fn variable<'b, D: Key, R: Monoid>(
+        &'b mut self,
     ) -> (Variable<'a, S, D, R>, Relation<impl Op<D = (S, D), R = R>>) {
         let rc = Rc::new(RefCell::new(HashMap::new()));
         (
