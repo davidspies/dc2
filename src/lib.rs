@@ -4,6 +4,7 @@
 mod convenience_operators;
 mod core;
 pub mod map;
+mod tuple;
 
 pub use self::convenience_operators::{
     Collection, DynReceiver, MapMapArrangement, MappingArrangement, OrderedArrangement,
