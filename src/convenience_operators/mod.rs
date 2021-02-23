@@ -84,11 +84,10 @@ impl<'a, C: Op<R = isize>> Relation<'a, C> {
     ) -> Relation<'a, impl Op<D = (C::D, isize), R = isize>> {
         self.concat(keys).counts().map(|(k, v)| (k, v - 1))
     }
-    pub fn histogram<C2: Op<D = C::D, R = isize>>(
+    pub fn histogram<C2: Clone + Op<D = C::D, R = isize>>(
         self,
         keys: Relation<'a, C2>,
     ) -> Relation<'a, impl Op<D = (C::D, isize), R = isize>> {
-        let keys = keys.split();
         self.intersection(keys.clone()).hist_including(keys)
     }
 }
