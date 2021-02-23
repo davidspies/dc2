@@ -223,18 +223,18 @@ pub trait AssertOnes {
 }
 
 pub trait HasOne {
-    fn is_one(&self) -> bool;
+    fn is_one(self) -> bool;
 }
 
 impl HasOne for isize {
-    fn is_one(&self) -> bool {
-        *self == 1
+    fn is_one(self) -> bool {
+        self == 1
     }
 }
 
 impl HasOne for &isize {
-    fn is_one(&self) -> bool {
-        **self == 1
+    fn is_one(self) -> bool {
+        *self == 1
     }
 }
 
