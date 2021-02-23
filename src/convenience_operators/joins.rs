@@ -73,16 +73,6 @@ impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
     {
         self.map(swap).semijoin(other).map(swap)
     }
-    pub fn antijoin<C2: Op<D = K, R = R2>, R2: Monoid>(
-        self,
-        other: Relation<'a, C2>,
-    ) -> Relation<'a, impl Op<D = C::D, R = C::R>>
-    where
-        C::R: Mul<R2, Output = C::R>,
-    {
-        let this = self.split();
-        this.clone().concat(this.semijoin(other).negate())
-    }
     pub fn antijoin_on_fst<C2: Op<D = K, R = R2>, R2: Monoid>(
         self,
         other: Relation<'a, C2>,
