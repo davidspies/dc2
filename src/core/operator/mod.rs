@@ -1,5 +1,6 @@
 mod barrier;
 mod concat;
+mod consolidate;
 mod dynamic;
 mod input;
 mod join;
