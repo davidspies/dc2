@@ -1,4 +1,4 @@
-use crate::core::is_map::IsAddMap;
+use crate::core::is_map::{HybridMap, IsAddMap};
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
 use crate::core::operator::Op;
@@ -15,14 +15,14 @@ pub(super) trait IsStepper<S> {
 
 pub(super) struct Stepper<S, D, R, C: Op<D = (S, D), R = R>> {
     pending: BTreeMap<S, HashMap<D, R>>,
-    input: Rc<RefCell<HashMap<(S, D), R>>>,
+    input: Rc<RefCell<HybridMap<(S, D), R>>>,
     output: C,
 }
 
 impl<S, D, R, C: Op<D = (S, D), R = R>> Stepper<S, D, R, C> {
     pub(super) fn new(
         pending: BTreeMap<S, HashMap<D, R>>,
-        input: Rc<RefCell<HashMap<(S, D), R>>>,
+        input: Rc<RefCell<HybridMap<(S, D), R>>>,
         output: C,
     ) -> Self {
         Stepper {

@@ -2,17 +2,18 @@ use super::contextual::IsContext;
 use super::simple_input::SimpleInput;
 use super::stepper::Stepper;
 use super::{Registrar, SubContext};
+use crate::core::is_map::HybridMap;
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
 use crate::core::operator::Op;
 use crate::core::{ContextId, Relation};
 use std::cell::RefCell;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
 pub struct Variable<'a, S: Key + Ord, D, R> {
-    inner: Rc<RefCell<HashMap<(S, D), R>>>,
+    inner: Rc<RefCell<HybridMap<(S, D), R>>>,
     context_id: ContextId,
     registrar: Registrar<S>,
     phantom: PhantomData<&'a ()>,
@@ -29,8 +30,11 @@ impl<'a, S: Key + Ord, D: Key, R: Monoid> Variable<'a, S, D, R> {
 impl<'a, Ctx: IsContext, S: Key + Ord> SubContext<'a, Ctx, S> {
     pub fn variable<'b, D: Key, R: Monoid>(
         &'b mut self,
-    ) -> (Variable<'a, S, D, R>, Relation<'a, impl Op<D = (S, D), R = R>>) {
-        let rc = Rc::new(RefCell::new(HashMap::new()));
+    ) -> (
+        Variable<'a, S, D, R>,
+        Relation<'a, impl Op<D = (S, D), R = R>>,
+    ) {
+        let rc = Rc::new(RefCell::new(HybridMap::new()));
         (
             Variable {
                 inner: rc.clone(),
