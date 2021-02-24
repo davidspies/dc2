@@ -140,6 +140,7 @@ fn intersection<K: Clone + Eq + Hash, V1: Clone, V2: Clone>(
 impl<'a, X: Key, Y: Key, R: Monoid + Mul<R, Output = R>, C1: Op<D = (X, Y), R = R>>
     Relation<'a, C1>
 {
+    /// Find all triangles in a tri-partite graph
     pub fn triangles<Z: Key, C2: Op<D = (X, Z), R = R>, C3: Op<D = (Y, Z), R = R>>(
         self,
         r2: Relation<'a, C2>,

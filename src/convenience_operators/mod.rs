@@ -25,6 +25,7 @@ impl<'a, C: Op> Relation<'a, C> {
     {
         self.dynamic().get_arrangement(context)
     }
+    /// Convenience function equivalent to `self.dynamic().split()`.
     pub fn collect(self) -> Collection<'a, C::D, C::R> {
         self.dynamic().split()
     }
@@ -67,6 +68,29 @@ impl<'a, C: Op> Relation<'a, C> {
         self.map(|x| (x, ()))
             .reduce(|_, xs: &UnitMap<C::R>| SingletonMap(xs.0.clone()))
     }
+    /// Equivalent to `self.barrier()`. For performance reasons, this should generally be called
+    /// on inputs to subgraphs which sit on top of long dependency chains.
+    ///
+    /// Example:
+    /// 
+    /// ```
+    /// use dc2::{CreationContext, Op, Relation};
+    /// let mut creation = CreationContext::new();
+    /// let (foo_inp, foo) = creation.create_input::<(usize, usize), isize>();
+    /// # let (bar_inp, some_big_complicated_relation) = creation.create_input::<(usize, usize), isize>();
+    /// // let bar: Relation<'static, impl Op<D=(usize, usize), R=isize>>
+    /// let bar = some_big_complicated_relation;
+    /// let mut subcontext = creation.subgraph::<usize>();
+    /// let (v, vrel) = subcontext.variable::<usize, isize>();
+    /// let next = foo.concat(vrel.join(bar.enter()).map(|(k, (x, y))| (k + 1, x + y))).split();
+    /// v.set(next.clone());
+    /// let result = next.leave(&subcontext.finish());
+    /// ```
+    /// 
+    /// Here we call `bar.enter()` because bar sits on top of a big complicated relation, but we
+    /// don't bother with `foo.enter()` since `foo` comes directly from an input (similarly calls
+    /// to `split` can be thought of as an "input" for this purpose since `split` calls
+    /// `self.barrier()`).
     pub fn enter(self) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
         self.barrier()
     }

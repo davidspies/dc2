@@ -98,6 +98,7 @@ impl<C: Op> Op for Receiver<C> {
 }
 
 impl<'a, C: Op> Relation<'a, C> {
+    /// Produces a version of this relation which can be cloned to use in multiple places.
     pub fn split(self) -> Relation<'a, Receiver<C>> {
         Relation {
             inner: Receiver::new(self.inner, self.depth),
