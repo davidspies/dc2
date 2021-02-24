@@ -1,3 +1,6 @@
+mod hybrid_map;
+
+pub use self::hybrid_map::HybridMap;
 use crate::core::emptyable::Emptyable;
 use crate::core::monoid::Monoid;
 use std::collections::{btree_map, hash_map, BTreeMap, HashMap};
@@ -19,7 +22,7 @@ pub trait IsMap<K, V> {
     fn into_discardable(self) -> Self::Discardable;
 }
 
-pub trait IsAddMap<K, V>: Emptyable {
+pub trait IsAddMap<K, V>: Default {
     fn add(&mut self, k: K, v: V);
 }
 

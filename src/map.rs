@@ -1,4 +1,4 @@
-pub use crate::core::is_map::{IsAddMap, IsDiscardMap, IsMap, IsRemoveMap};
+pub use crate::core::is_map::{HybridMap, IsAddMap, IsDiscardMap, IsMap, IsRemoveMap};
 use crate::emptyable::Emptyable;
 use crate::monoid::Monoid;
 use std::cmp::Ordering;

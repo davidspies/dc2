@@ -1,5 +1,6 @@
 use super::split::{Receiver, SourceRef};
 use super::Op;
+use crate::core::emptyable::Emptyable;
 use crate::core::is_map::{IsAddMap, IsDiscardMap, IsMap, IsRemoveMap};
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
@@ -22,7 +23,7 @@ impl<
         C: Op<D = (K, D1)>,
         K: Key,
         D1,
-        M1: IsAddMap<D1, C::R> + 'static,
+        M1: IsAddMap<D1, C::R> + Emptyable + 'static,
         M2: IsMap<D2, R2> + 'static,
         MF: Fn(&K, &M1) -> M2 + 'static,
         D2: Key,
@@ -88,7 +89,7 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
         D2: Key,
         R2: Monoid,
         MF: Fn(&K, &M1) -> M2 + 'static,
-        M1: IsAddMap<D, C::R> + 'static,
+        M1: IsAddMap<D, C::R> + Emptyable + 'static,
         M2: IsMap<D2, R2> + 'static,
     >(
         self,

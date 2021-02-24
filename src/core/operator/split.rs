@@ -1,17 +1,15 @@
 use super::barrier::Barrier;
 use super::Op;
-use crate::core::is_map::IsAddMap;
+use crate::core::is_map::{HybridMap, IsAddMap};
 use crate::core::iter::TupleableWith;
 use crate::core::{Relation, Step};
 use std::cell::{Ref, RefCell, RefMut};
-use std::collections::HashMap;
 use std::marker::PhantomData;
-use std::mem;
 use std::rc::Rc;
 
 struct Source<C: Op> {
     inner: Barrier<C>,
-    listeners: Vec<Rc<RefCell<HashMap<C::D, C::R>>>>,
+    listeners: Vec<Rc<RefCell<HybridMap<C::D, C::R>>>>,
 }
 
 pub(super) struct SourceRef<C: Op>(Rc<RefCell<Source<C>>>);
@@ -37,20 +35,20 @@ impl<C: Op> SourceRef<C> {
             });
         }
     }
-    fn add_listener(&self, listener: Rc<RefCell<HashMap<C::D, C::R>>>) {
+    fn add_listener(&self, listener: Rc<RefCell<HybridMap<C::D, C::R>>>) {
         self.0.borrow_mut().listeners.push(listener)
     }
 }
 
 pub struct Receiver<C: Op> {
-    data: Rc<RefCell<HashMap<C::D, C::R>>>,
+    data: Rc<RefCell<HybridMap<C::D, C::R>>>,
     source: SourceRef<C>,
 }
 
 impl<C: Op> Receiver<C> {
     pub(super) fn new(from: C, depth: usize) -> Self {
         let inner = Barrier::new(from, depth);
-        let data = Rc::new(RefCell::new(HashMap::new()));
+        let data = Rc::new(RefCell::new(HybridMap::new()));
         let source = SourceRef(Rc::new(RefCell::new(Source {
             inner,
             listeners: vec![Rc::clone(&data)],
@@ -91,7 +89,7 @@ impl<C: Op> Op for Receiver<C> {
 
     fn flow<F: FnMut(C::D, C::R)>(&mut self, step: &Step, mut send: F) {
         self.source.propagate(step);
-        for (x, r) in mem::take(&mut *self.data.borrow_mut()) {
+        for (x, r) in self.data.borrow_mut().steal() {
             send(x, r)
         }
     }
