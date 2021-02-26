@@ -10,6 +10,7 @@ use crate::{
 };
 use std::collections::{BTreeMap, HashMap};
 use std::iter;
+use std::ops::Neg;
 
 pub type DynReceiver<D, R = isize> = Receiver<DynOp<D, R>>;
 pub type Collection<'a, D, R = isize> = Relation<'a, DynReceiver<D, R>>;
@@ -39,9 +40,13 @@ impl<'a, C: Op> Relation<'a, C> {
         self,
         f: F,
     ) -> Relation<'a, impl Op<D = D2, R = C::R>> {
-        self.flat_map(move |x| iter::once(f(x)))
-            .op_named("map")
-            .hidden()
+        self.flat_map(move |x| iter::once(f(x))).op_named("map")
+    }
+    pub fn hmap<F: Fn(C::D) -> D2 + 'static, D2: Key>(
+        self,
+        f: F,
+    ) -> Relation<'a, impl Op<D = D2, R = C::R>> {
+        self.map(f).hidden()
     }
     pub fn filter<F: Fn(&C::D) -> bool + 'static>(
         self,
@@ -56,12 +61,9 @@ impl<'a, C: Op> Relation<'a, C> {
     ) -> Relation<'a, impl Op<D = C::D, R = R2>> {
         self.flat_map_dr(move |x, r| iter::once((x, f(r))))
             .op_named("map_r")
-            .hidden()
     }
     pub fn negate(self) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
-        self.flat_map_dr(move |x, r| iter::once((x, -r)))
-            .op_named("negate")
-            .hidden()
+        self.map_r(Neg::neg).op_named("negate")
     }
     pub fn counts(
         self,
@@ -72,7 +74,7 @@ impl<'a, C: Op> Relation<'a, C> {
     where
         C::R: Key,
     {
-        self.map(|x| (x, ()))
+        self.hmap(|x| (x, ()))
             .reduce(|_, xs: &UnitMap<C::R>| SingletonMap(xs.0.clone()))
             .op_named("counts")
     }
@@ -103,10 +105,10 @@ impl<'a, C: Op> Relation<'a, C> {
         self.barrier().op_named("enter")
     }
     pub fn distinct(self) -> Relation<'a, impl Op<D = C::D, R = isize>> {
-        self.map(|x| (x, ()))
+        self.hmap(|x| (x, ()))
             .reduce(|_, _: &UnitMap<C::R>| UnitMap(1))
             .op_named("distinct")
-            .map(|(k, ())| k)
+            .hmap(|(k, ())| k)
     }
 }
 
@@ -115,7 +117,7 @@ impl<'a, C: Op<R = isize>> Relation<'a, C> {
         self,
         keys: Relation<'a, C2>,
     ) -> Relation<'a, impl Op<D = (C::D, isize), R = isize>> {
-        self.concat(keys).counts().map(|(k, v)| (k, v - 1))
+        self.concat(keys).counts().hmap(|(k, v)| (k, v - 1))
     }
     pub fn histogram<C2: Clone + Op<D = C::D, R = isize>>(
         self,

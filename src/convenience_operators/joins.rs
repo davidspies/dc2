@@ -13,10 +13,10 @@ impl<'a, C: Op> Relation<'a, C> {
     where
         C::R: Mul<C2::R, Output = R3>,
     {
-        self.map(move |val| (f(&val), val))
+        self.hmap(move |val| (f(&val), val))
             .semijoin(other)
             .op_named("semijoin_on")
-            .map(snd)
+            .hmap(snd)
     }
     pub fn antijoin_on<F: Fn(&C::D) -> C2::D + 'static, C2: Op>(
         self,
@@ -26,10 +26,10 @@ impl<'a, C: Op> Relation<'a, C> {
     where
         C::R: Mul<C2::R, Output = C::R>,
     {
-        self.map(move |val| (f(&val), val))
+        self.hmap(move |val| (f(&val), val))
             .antijoin(other)
             .op_named("antijoin_on")
-            .map(snd)
+            .hmap(snd)
     }
     pub fn intersection<C2: Op<D = C::D>, R3: Monoid>(
         self,
@@ -38,10 +38,10 @@ impl<'a, C: Op> Relation<'a, C> {
     where
         C::R: Mul<C2::R, Output = R3>,
     {
-        self.map(|x| (x, ()))
+        self.hmap(|x| (x, ()))
             .semijoin(other)
             .op_named("intersection")
-            .map(fst)
+            .hmap(fst)
     }
     pub fn set_minus<C2: Op<D = C::D>>(
         self,
@@ -50,10 +50,10 @@ impl<'a, C: Op> Relation<'a, C> {
     where
         C::R: Mul<C2::R, Output = C::R>,
     {
-        self.map(|x| (x, ()))
+        self.hmap(|x| (x, ()))
             .antijoin(other)
             .op_named("set_minus")
-            .map(fst)
+            .hmap(fst)
     }
 }
 
@@ -65,9 +65,9 @@ impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
     where
         C::R: Mul<R2, Output = R3>,
     {
-        self.join(other.map(|x| (x, ())))
+        self.join(other.hmap(|x| (x, ())))
             .op_named("semijoin")
-            .map(|(k, (x, ()))| (k, x))
+            .hmap(|(k, (x, ()))| (k, x))
     }
     pub fn semijoin_on_fst<C2: Op<D = K, R = R2>, R2: Monoid, R3: Monoid>(
         self,
@@ -85,10 +85,10 @@ impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
     where
         C::R: Mul<R2, Output = R3>,
     {
-        self.map(swap)
+        self.hmap(swap)
             .semijoin(other)
             .op_named("semijoin_on_snd")
-            .map(swap)
+            .hmap(swap)
     }
     pub fn antijoin_on_fst<C2: Op<D = K, R = R2>, R2: Monoid>(
         self,
@@ -106,9 +106,9 @@ impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
     where
         C::R: Mul<R2, Output = C::R>,
     {
-        self.map(swap)
+        self.hmap(swap)
             .antijoin(other)
             .op_named("antijoin_on_snd")
-            .map(swap)
+            .hmap(swap)
     }
 }
