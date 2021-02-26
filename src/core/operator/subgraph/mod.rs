@@ -9,8 +9,10 @@ use self::contextual::IsContext;
 use self::registrar::Registrar;
 pub use self::variable::Variable;
 use crate::core::key::Key;
-use crate::core::node::NodeMaker;
+use crate::core::node::{NodeInfo, NodeMaker};
 use crate::core::{ContextId, CreationContext};
+use std::cell::RefCell;
+use std::rc::Weak;
 
 impl<'a, Ctx: IsContext, S: Key + Ord> IsContext for SubContext<'a, Ctx, S> {
     fn get_context_id(&self) -> ContextId {
@@ -32,6 +34,12 @@ pub struct SubContext<'a, Ctx, S: Key + Ord> {
 pub struct Finalizer<'a, Ctx, S: Key + Ord> {
     parent: &'a Ctx,
     registrar: Registrar<S>,
+}
+
+impl<Ctx, S: Key + Ord> Finalizer<'_, Ctx, S> {
+    fn node_ref(&self) -> Weak<RefCell<NodeInfo>> {
+        self.registrar.get_inner().node_ref()
+    }
 }
 
 impl CreationContext {

@@ -34,27 +34,32 @@ impl<'a, C: Op> Relation<'a, C> {
         f: F,
     ) -> Relation<'a, impl Op<D = D2, R = C::R>> {
         self.flat_map_dr(move |x, r| f(x).into_iter().tuple_with(r))
+            .op_named("flat_map")
     }
     pub fn map<F: Fn(C::D) -> D2 + 'static, D2: Key>(
         self,
         f: F,
     ) -> Relation<'a, impl Op<D = D2, R = C::R>> {
         self.flat_map(move |x| iter::once(f(x)))
+            .op_named("map")
+            .hidden()
     }
     pub fn filter<F: Fn(&C::D) -> bool + 'static>(
         self,
         f: F,
     ) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
         self.flat_map(move |x| if f(&x) { Some(x) } else { None })
+            .op_named("filter")
     }
     pub fn map_r<F: Fn(C::R) -> R2 + 'static, R2: Monoid>(
         self,
         f: F,
     ) -> Relation<'a, impl Op<D = C::D, R = R2>> {
         self.flat_map_dr(move |x, r| iter::once((x, f(r))))
+            .op_named("map_r")
     }
     pub fn negate(self) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
-        self.map_r(Neg::neg)
+        self.map_r(Neg::neg).op_named("negate")
     }
     pub fn counts(
         self,
@@ -67,12 +72,13 @@ impl<'a, C: Op> Relation<'a, C> {
     {
         self.map(|x| (x, ()))
             .reduce(|_, xs: &UnitMap<C::R>| SingletonMap(xs.0.clone()))
+            .op_named("counts")
     }
     /// Equivalent to `self.barrier()`. For performance reasons, this should generally be called
     /// on inputs to subgraphs which sit on top of long dependency chains.
     ///
     /// Example:
-    /// 
+    ///
     /// ```
     /// use dc2::{CreationContext, Op, Relation};
     /// let mut creation = CreationContext::new();
@@ -86,17 +92,18 @@ impl<'a, C: Op> Relation<'a, C> {
     /// v.set(next.clone());
     /// let result = next.leave(&subcontext.finish());
     /// ```
-    /// 
+    ///
     /// Here we call `bar.enter()` because bar sits on top of a big complicated relation, but we
     /// don't bother with `foo.enter()` since `foo` comes directly from an input (similarly calls
     /// to `split` can be thought of as an "input" for this purpose since `split` calls
     /// `self.barrier()`).
     pub fn enter(self) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
-        self.barrier()
+        self.barrier().op_named("enter")
     }
     pub fn distinct(self) -> Relation<'a, impl Op<D = C::D, R = isize>> {
         self.map(|x| (x, ()))
             .reduce(|_, _: &UnitMap<C::R>| UnitMap(1))
+            .op_named("distinct")
             .map(|(k, ())| k)
     }
 }
@@ -126,6 +133,7 @@ impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
         self.reduce(|_, xs: &BTreeMap<V, C::R>| {
             SingletonMap(xs.first_key_value().unwrap().0.clone())
         })
+        .op_named("group_min")
     }
     pub fn group_max(
         self,
@@ -136,6 +144,7 @@ impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
         self.reduce(|_, xs: &BTreeMap<V, C::R>| {
             SingletonMap(xs.last_key_value().unwrap().0.clone())
         })
+        .op_named("group_max")
     }
 }
 
@@ -158,6 +167,8 @@ impl<K: Key, V: Key, C: Op<D = (K, V), R = isize>> Relation<'static, C> {
                 }
             }
         })
+        .op_named("assert_1to1")
+        .hidden()
         .split_reduce_output(context)
     }
 }

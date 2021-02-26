@@ -25,6 +25,9 @@ impl<T: Op> DynOpT for Node<T> {
 impl<D: Key, R: Monoid> Op for DynOp<D, R> {
     type D = D;
     type R = R;
+    fn default_op_name() -> &'static str {
+        "dynamic"
+    }
     fn flow<F: FnMut(D, R)>(&mut self, step: &Step, mut send: F) {
         self.0.flow_dyn(step, &mut send)
     }
@@ -35,11 +38,14 @@ impl<'a, C: Op> Relation<'a, C> {
     /// type-signature at a cost of having to look them up at run-time.
     pub fn dynamic(self) -> Relation<'a, DynOp<C::D, C::R>> {
         Relation {
-            inner: self.node_maker.make_node(DynOp(Box::new(self.inner))),
+            inner: self
+                .node_maker
+                .make_node(vec![self.node_ref()], DynOp(Box::new(self.inner))),
             context_id: self.context_id,
             depth: self.depth,
             phantom: PhantomData,
             node_maker: self.node_maker,
         }
+        .hidden()
     }
 }

@@ -14,6 +14,9 @@ impl<D: Key, R: Monoid, C1: Op<D = D, R = R>, C2: Op<D = D, R = R>> Op for Conca
     type D = D;
     type R = R;
 
+    fn default_op_name() -> &'static str {
+        "concat"
+    }
     fn flow<F: FnMut(D, R)>(&mut self, step: &Step, mut send: F) {
         self.left.flow(step, &mut send);
         self.right.flow(step, send);
@@ -27,10 +30,13 @@ impl<'a, C: Op> Relation<'a, C> {
     ) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
         assert_eq!(self.context_id, other.context_id, "Context mismatch");
         Relation {
-            inner: self.node_maker.make_node(Concat {
-                left: self.inner,
-                right: other.inner,
-            }),
+            inner: self.node_maker.make_node(
+                vec![self.node_ref(), other.node_ref()],
+                Concat {
+                    left: self.inner,
+                    right: other.inner,
+                },
+            ),
             context_id: self.context_id,
             depth: self.depth.max(other.depth),
             phantom: PhantomData,

@@ -26,12 +26,10 @@ impl<A, B, C: Op<D = (A, B)>> BiMap<A, B, C> {
     }
 }
 
-impl<A: Key, B: Key, C: Op<D = (A, B)>> Op for BiMap<A, B, C>
+impl<A: Key, B: Key, C: Op<D = (A, B)>> BiMap<A, B, C>
 where
     C::R: Mul<C::R, Output = C::R>,
 {
-    type D = (A, B);
-    type R = C::R;
     fn flow<F: FnMut((A, B), C::R)>(&mut self, step: &Step, mut send: F) {
         let BiMap {
             forward,
@@ -73,6 +71,9 @@ impl<
     type D = (X, Y, Z);
     type R = R;
 
+    fn default_op_name() -> &'static str {
+        "triangles"
+    }
     fn flow<F: FnMut((X, Y, Z), R)>(&mut self, step: &Step, mut send: F) {
         let Triangles { mxy, mxz, myz } = self;
         mxy.flow(step, |(x, y), rxy| {
@@ -151,11 +152,14 @@ impl<'a, X: Key, Y: Key, R: Monoid + Mul<R, Output = R>, C1: Op<D = (X, Y), R = 
         assert_eq!(self.context_id, r3.context_id, "Context mismatch");
         Relation {
             context_id: self.context_id,
-            inner: self.node_maker.make_node(Triangles {
-                mxy: BiMap::new(self.inner),
-                mxz: BiMap::new(r2.inner),
-                myz: BiMap::new(r3.inner),
-            }),
+            inner: self.node_maker.make_node(
+                vec![self.node_ref(), r2.node_ref(), r3.node_ref()],
+                Triangles {
+                    mxy: BiMap::new(self.inner),
+                    mxz: BiMap::new(r2.inner),
+                    myz: BiMap::new(r3.inner),
+                },
+            ),
             depth: self.depth.max(r2.depth).max(r3.depth),
             phantom: PhantomData,
             node_maker: self.node_maker,

@@ -18,6 +18,9 @@ impl<S: Key + Ord> Op for RegistrarInner<S> {
     type D = Void;
     type R = isize;
 
+    fn default_op_name() -> &'static str {
+        "subgraph"
+    }
     fn flow<Send>(&mut self, step: &Step, _send: Send) {
         loop {
             self.inner_step += 1;
@@ -44,10 +47,13 @@ impl<S: Key + Ord> Op for RegistrarInner<S> {
 impl<S: Key + Ord> Registrar<S> {
     pub(super) fn new_registrar(depth: usize, node_maker: &NodeMaker) -> Self {
         Receiver::new(
-            node_maker.make_node(RegistrarInner {
-                steppers: Vec::new(),
-                inner_step: 0,
-            }),
+            node_maker.make_node(
+                Vec::new(),
+                RegistrarInner {
+                    steppers: Vec::new(),
+                    inner_step: 0,
+                },
+            ),
             depth,
         )
     }
@@ -55,7 +61,9 @@ impl<S: Key + Ord> Registrar<S> {
         &mut self,
         stepper: Stepper<S, D, C::R, C>,
     ) {
-        self.get_inner_mut().inner.steppers.push(Box::new(stepper))
+        let mut inner = self.get_inner_mut();
+        inner.info.borrow_mut().deps.push(stepper.node_ref());
+        inner.inner.steppers.push(Box::new(stepper));
     }
     pub(super) fn get_inner_step(&self) -> usize {
         self.get_inner().inner.inner_step

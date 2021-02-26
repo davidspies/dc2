@@ -23,6 +23,9 @@ impl<
     type D = D2;
     type R = R2;
 
+    fn default_op_name() -> &'static str {
+        "flat_map_dr"
+    }
     fn flow<F: FnMut(D2, R2)>(&mut self, step: &Step, mut send: F) {
         let FlatMap {
             ref mut inner,
@@ -47,10 +50,13 @@ impl<'a, C: Op> Relation<'a, C> {
         f: F,
     ) -> Relation<'a, impl Op<D = D2, R = R2>> {
         Relation {
-            inner: self.node_maker.make_node(FlatMap {
-                inner: self.inner,
-                op: f,
-            }),
+            inner: self.node_maker.make_node(
+                vec![self.node_ref()],
+                FlatMap {
+                    inner: self.inner,
+                    op: f,
+                },
+            ),
             context_id: self.context_id,
             depth: self.depth,
             phantom: PhantomData,

@@ -33,6 +33,9 @@ impl<
     type D = (K, D2);
     type R = R2;
 
+    fn default_op_name() -> &'static str {
+        "reduce"
+    }
     fn flow<F: FnMut((K, D2), R2)>(&mut self, step: &Step, mut send: F) {
         let mut changed_keys = HashSet::new();
         let Reduce {
@@ -96,13 +99,16 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
         proc: MF,
     ) -> Relation<'a, impl IsReduce<K = K, M = M2> + Op<D = (K, D2), R = R2>> {
         Relation {
-            inner: self.node_maker.make_node(Reduce {
-                inner: self.inner,
-                input_maps: HashMap::new(),
-                output_maps: HashMap::new(),
-                proc,
-                phantom: PhantomData,
-            }),
+            inner: self.node_maker.make_node(
+                vec![self.node_ref()],
+                Reduce {
+                    inner: self.inner,
+                    input_maps: HashMap::new(),
+                    output_maps: HashMap::new(),
+                    proc,
+                    phantom: PhantomData,
+                },
+            ),
             context_id: self.context_id,
             depth: self.depth,
             phantom: PhantomData,

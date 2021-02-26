@@ -48,10 +48,7 @@ impl<D: Key, R: Monoid> InputInner<D, R> {
         }
     }
 }
-impl<D: Key, R: Monoid> Op for InputInner<D, R> {
-    type D = D;
-    type R = R;
-
+impl<D: Key, R: Monoid> InputInner<D, R> {
     fn flow<F: FnMut(D, R)>(&mut self, step: &Step, mut send: F) {
         let root_step = step.step_for(0).get_last();
         self.resolve(root_step);
@@ -65,6 +62,9 @@ impl<D: Key, R: Monoid> Op for InputCollection<D, R> {
     type D = D;
     type R = R;
 
+    fn default_op_name() -> &'static str {
+        "input"
+    }
     fn flow<F: FnMut(D, R)>(&mut self, step: &Step, send: F) {
         self.0.borrow_mut().flow(step, send)
     }
@@ -85,7 +85,9 @@ impl CreationContext {
                 context_id: self.context_id,
             },
             Relation {
-                inner: self.node_maker.make_node(InputCollection(inner)),
+                inner: self
+                    .node_maker
+                    .make_node(Vec::new(), InputCollection(inner)),
                 context_id: self.context_id,
                 depth: 0,
                 phantom: PhantomData,

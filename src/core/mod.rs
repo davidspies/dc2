@@ -118,9 +118,24 @@ pub struct Relation<'a, C> {
     node_maker: NodeMaker,
 }
 
-impl<'a, C> Relation<'a, C> {
+impl<'a, C: Op> Relation<'a, C> {
     pub fn named(mut self, name: &str) -> Self {
         self.inner.set_name(name.to_string());
+        self
+    }
+    pub fn op_named(mut self, name: &str) -> Self {
+        self.inner.set_op_name(name.to_string());
+        self
+    }
+    pub fn hidden(self) -> Self {
+        assert_eq!(self.inner.info.borrow().deps.len(), 1);
+        self.set_shown(false)
+    }
+    pub fn shown(self) -> Self {
+        self.set_shown(true)
+    }
+    fn set_shown(self, shown: bool) -> Self {
+        self.inner.info.borrow_mut().shown = shown;
         self
     }
 }

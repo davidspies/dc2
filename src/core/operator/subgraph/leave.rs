@@ -15,6 +15,9 @@ struct Leave<S: Key + Ord, C> {
 impl<S: Key + Ord, C: Op> Op for Leave<S, C> {
     type D = C::D;
     type R = C::R;
+    fn default_op_name() -> &'static str {
+        "leave"
+    }
     fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: &Step, send: F) {
         self.registrar.flow(step, |_, _| ());
         self.inner
@@ -33,10 +36,13 @@ impl<'b, C: Op> Relation<'b, C> {
             "Context mismatch"
         );
         Relation {
-            inner: self.node_maker.make_node(Leave {
-                inner: self.inner,
-                registrar: finalizer.registrar.clone(),
-            }),
+            inner: self.node_maker.make_node(
+                vec![finalizer.node_ref(), self.node_ref()],
+                Leave {
+                    inner: self.inner,
+                    registrar: finalizer.registrar.clone(),
+                },
+            ),
             depth: Ctx::get_depth(),
             context_id: self.context_id,
             phantom: PhantomData,

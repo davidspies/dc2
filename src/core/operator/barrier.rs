@@ -27,6 +27,9 @@ impl<C> Barrier<C> {
 impl<C: Op> Op for Barrier<C> {
     type D = C::D;
     type R = C::R;
+    fn default_op_name() -> &'static str {
+        "barrier"
+    }
     fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: &Step, send: F) {
         let step_for_depth = step.step_for(self.depth);
         let against = step_for_depth.get_last();
@@ -48,11 +51,12 @@ impl<'a, C: Op> Relation<'a, C> {
         Relation {
             inner: self
                 .node_maker
-                .make_node(Barrier::new(self.inner, self.depth)),
+                .make_node(vec![self.node_ref()], Barrier::new(self.inner, self.depth)),
             context_id: self.context_id,
             depth: self.depth,
             phantom: PhantomData,
             node_maker: self.node_maker,
         }
+        .hidden()
     }
 }

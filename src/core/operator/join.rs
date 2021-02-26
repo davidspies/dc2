@@ -30,6 +30,9 @@ impl<
     type D = (K, (LD, RD));
     type R = OR;
 
+    fn default_op_name() -> &'static str {
+        "join"
+    }
     fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: &Step, mut send: F) {
         let Join {
             left,
@@ -77,6 +80,9 @@ impl<
     type D = (K, LD);
     type R = LR;
 
+    fn default_op_name() -> &'static str {
+        "antijoin"
+    }
     fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: &Step, mut send: F) {
         let AntiJoin {
             left,
@@ -115,12 +121,15 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
     {
         assert_eq!(self.context_id, other.context_id, "Context mismatch");
         Relation {
-            inner: self.node_maker.make_node(Join {
-                left: self.inner,
-                right: other.inner,
-                left_map: HashMap::new(),
-                right_map: HashMap::new(),
-            }),
+            inner: self.node_maker.make_node(
+                vec![self.node_ref(), other.node_ref()],
+                Join {
+                    left: self.inner,
+                    right: other.inner,
+                    left_map: HashMap::new(),
+                    right_map: HashMap::new(),
+                },
+            ),
             context_id: self.context_id,
             depth: self.depth.max(other.depth),
             phantom: PhantomData,
@@ -133,12 +142,15 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
     ) -> Relation<'a, impl Op<D = (K, D), R = C::R>> {
         assert_eq!(self.context_id, other.context_id, "Context mismatch");
         Relation {
-            inner: self.node_maker.make_node(AntiJoin {
-                left: self.inner,
-                right: other.inner,
-                left_map: HashMap::new(),
-                right_map: HashMap::new(),
-            }),
+            inner: self.node_maker.make_node(
+                vec![self.node_ref(), other.node_ref()],
+                AntiJoin {
+                    left: self.inner,
+                    right: other.inner,
+                    left_map: HashMap::new(),
+                    right_map: HashMap::new(),
+                },
+            ),
             context_id: self.context_id,
             depth: self.depth.max(other.depth),
             phantom: PhantomData,

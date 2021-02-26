@@ -1,12 +1,12 @@
 use crate::core::is_map::IsAddMap;
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
-use crate::core::node::Node;
+use crate::core::node::{Node, NodeInfo};
 use crate::core::operator::Op;
 use crate::core::Step;
 use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 pub(super) trait IsStepper<S> {
     fn flow(&mut self, step: &Step);
@@ -31,6 +31,9 @@ impl<S, D, R, C: Op<D = (S, D), R = R>> Stepper<S, D, R, C> {
             input,
             output,
         }
+    }
+    pub(super) fn node_ref(&self) -> Weak<RefCell<NodeInfo>> {
+        self.output.node_ref()
     }
 }
 

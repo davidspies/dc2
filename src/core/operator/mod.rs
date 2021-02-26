@@ -21,5 +21,6 @@ use crate::core::monoid::Monoid;
 pub trait Op: 'static {
     type D: Key;
     type R: Monoid;
+    fn default_op_name() -> &'static str;
     fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: &Step, send: F);
 }

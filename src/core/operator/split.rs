@@ -90,6 +90,9 @@ impl<C: Op> Op for Receiver<C> {
     type D = C::D;
     type R = C::R;
 
+    fn default_op_name() -> &'static str {
+        "split"
+    }
     fn flow<F: FnMut(C::D, C::R)>(&mut self, step: &Step, mut send: F) {
         self.source.propagate(step);
         for (x, r) in mem::take(&mut *self.data.borrow_mut()) {
@@ -104,11 +107,12 @@ impl<'a, C: Op> Relation<'a, C> {
         Relation {
             inner: self
                 .node_maker
-                .make_node(Receiver::new(self.inner, self.depth)),
+                .make_node(vec![self.node_ref()], Receiver::new(self.inner, self.depth)),
             context_id: self.context_id,
             depth: self.depth,
             phantom: PhantomData,
             node_maker: self.node_maker,
         }
+        .hidden()
     }
 }
