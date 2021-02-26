@@ -102,7 +102,7 @@ impl<'a, C: Op> Relation<'a, C> {
     /// to `split` can be thought of as an "input" for this purpose since `split` calls
     /// `self.barrier()`).
     pub fn enter(self) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
-        self.barrier().op_named("enter")
+        self.barrier().shown().op_named("enter").hidden()
     }
     pub fn distinct(self) -> Relation<'a, impl Op<D = C::D, R = isize>> {
         self.hmap(|x| (x, ()))
