@@ -38,10 +38,11 @@ pub(super) struct NodeInfo {
     pub(super) message_count: usize,
     pub(super) relation_id: RelationId,
     pub(super) deps: Vec<Weak<RefCell<NodeInfo>>>,
+    pub(super) hideable: bool,
 }
 
 impl NodeInfo {
-    fn set_op_name(&mut self, name: String) {
+    pub(super) fn set_op_name(&mut self, name: String) {
         if self.shown {
             self.operator_name = name
         } else {
@@ -79,6 +80,7 @@ impl NodeMaker {
             operator_name: C::default_op_name().to_string(),
             relation_id: infos.len(),
             deps,
+            hideable: C::hideable(),
         }));
         infos.push(Rc::clone(&info));
         Node { inner, info }

@@ -128,7 +128,12 @@ impl<'a, C: Op> Relation<'a, C> {
         self
     }
     pub fn hidden(self) -> Self {
-        assert_eq!(self.inner.info.borrow().deps.len(), 1);
+        assert!(self.inner.info.borrow().hideable, "Unhideable relation type");
+        assert_eq!(
+            self.inner.info.borrow().deps.len(),
+            1,
+            "Too many inputs to hide"
+        );
         self.set_shown(false)
     }
     pub fn shown(self) -> Self {

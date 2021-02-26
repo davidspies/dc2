@@ -62,6 +62,7 @@ impl<S: Key + Ord> Registrar<S> {
         stepper: Stepper<S, D, C::R, C>,
     ) {
         let mut inner = self.get_inner_mut();
+        assert!(inner.info.borrow().shown);
         inner.info.borrow_mut().deps.push(stepper.node_ref());
         inner.inner.steppers.push(Box::new(stepper));
     }

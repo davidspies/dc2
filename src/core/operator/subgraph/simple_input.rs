@@ -12,6 +12,9 @@ pub(super) struct SimpleInput<D, R>(pub(super) Rc<RefCell<HashMap<D, R>>>);
 impl<D: Key, R: Monoid> Op for SimpleInput<D, R> {
     type D = D;
     type R = R;
+    fn hideable() -> bool {
+        false
+    }
     fn default_op_name() -> &'static str {
         "variable"
     }
