@@ -12,7 +12,7 @@ pub(super) struct Node<C> {
 
 impl<C: Op> Node<C> {
     pub(super) fn set_name(&mut self, name: String) {
-        self.info.borrow_mut().name = Some(name)
+        self.info.borrow_mut().set_name(name)
     }
     pub(super) fn set_op_name(&mut self, name: String) {
         self.info.borrow_mut().set_op_name(name)
@@ -42,27 +42,29 @@ pub(super) struct NodeInfo {
 }
 
 impl NodeInfo {
+    pub(super) fn set_name(&mut self, name: String) {
+        self.apply_to_shown(|n| n.name = Some(name))
+    }
     pub(super) fn set_op_name(&mut self, name: String) {
+        self.apply_to_shown(|n| n.operator_name = name)
+    }
+    fn apply_to_shown<F: FnOnce(&mut Self)>(&mut self, f: F) {
         if self.shown {
-            self.operator_name = name
+            f(self)
         } else {
-            assert_eq!(
-                self.deps.len(),
-                1,
-                "Can only hide nodes with exactly 1 input"
-            );
+            assert_eq!(self.deps.len(), 1);
             self.deps[0]
                 .upgrade()
                 .unwrap()
                 .borrow_mut()
-                .set_op_name(name)
+                .apply_to_shown(f)
         }
     }
 }
 
 #[derive(Clone)]
 pub struct NodeMaker {
-    infos: Rc<RefCell<Vec<Rc<RefCell<NodeInfo>>>>>,
+    pub(super) infos: Rc<RefCell<Vec<Rc<RefCell<NodeInfo>>>>>,
 }
 
 impl NodeMaker {

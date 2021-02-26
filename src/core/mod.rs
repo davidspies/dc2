@@ -9,9 +9,13 @@ mod node;
 mod operator;
 
 pub use self::arrangement::Arrangement;
-use self::node::{Node, NodeMaker};
+use self::node::{Node, NodeInfo, NodeMaker};
 pub use self::operator::{subgraph, DynOp, Input, IsReduce, Op, Receiver, ReduceOutput};
+use std::cell::RefCell;
+use std::io::{self, Write};
 use std::marker::PhantomData;
+use std::mem;
+use std::rc::Rc;
 use std::sync::atomic::{self, AtomicUsize};
 
 static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
@@ -39,6 +43,7 @@ impl CreationContext {
 pub struct ExecutionContext {
     step: usize,
     context_id: ContextId,
+    infos: Vec<Rc<RefCell<NodeInfo>>>,
 }
 
 impl CreationContext {
@@ -46,6 +51,7 @@ impl CreationContext {
         ExecutionContext {
             step: 0,
             context_id: self.context_id,
+            infos: mem::take(&mut self.node_maker.infos.borrow_mut()),
         }
     }
 }
@@ -53,6 +59,34 @@ impl CreationContext {
 impl ExecutionContext {
     pub fn commit(&mut self) {
         self.step += 1;
+    }
+    pub fn dump_dot<W: Write>(&self, file: &mut W) -> Result<(), io::Error> {
+        writeln!(file, "digraph flow {{")?;
+        for info_ref in self.infos.iter() {
+            let info = info_ref.borrow();
+            let name = if let Some(name) = info.name.as_ref() {
+                format!("{} <br/>", name)
+            } else {
+                "".to_string()
+            };
+            writeln!(
+                file,
+                "  node{} [label = < {} {} <br/> {} >];",
+                info.relation_id, name, info.operator_name, info.message_count,
+            )?;
+        }
+        for info_ref in self.infos.iter() {
+            let info = info_ref.borrow();
+            for dep in info.deps.iter() {
+                writeln!(
+                    file,
+                    "  node{} -> node{};",
+                    dep.upgrade().unwrap().borrow().relation_id,
+                    info.relation_id
+                )?;
+            }
+        }
+        writeln!(file, "}}")
     }
 }
 
@@ -128,7 +162,10 @@ impl<'a, C: Op> Relation<'a, C> {
         self
     }
     pub fn hidden(self) -> Self {
-        assert!(self.inner.info.borrow().hideable, "Unhideable relation type");
+        assert!(
+            self.inner.info.borrow().hideable,
+            "Unhideable relation type"
+        );
         assert_eq!(
             self.inner.info.borrow().deps.len(),
             1,
