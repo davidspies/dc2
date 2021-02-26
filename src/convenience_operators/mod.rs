@@ -10,7 +10,6 @@ use crate::{
 };
 use std::collections::{BTreeMap, HashMap};
 use std::iter;
-use std::ops::Neg;
 
 pub type DynReceiver<D, R = isize> = Receiver<DynOp<D, R>>;
 pub type Collection<'a, D, R = isize> = Relation<'a, DynReceiver<D, R>>;
@@ -57,9 +56,12 @@ impl<'a, C: Op> Relation<'a, C> {
     ) -> Relation<'a, impl Op<D = C::D, R = R2>> {
         self.flat_map_dr(move |x, r| iter::once((x, f(r))))
             .op_named("map_r")
+            .hidden()
     }
     pub fn negate(self) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
-        self.map_r(Neg::neg).op_named("negate")
+        self.flat_map_dr(move |x, r| iter::once((x, -r)))
+            .op_named("negate")
+            .hidden()
     }
     pub fn counts(
         self,

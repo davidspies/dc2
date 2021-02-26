@@ -64,6 +64,9 @@ impl ExecutionContext {
         writeln!(file, "digraph flow {{")?;
         for info_ref in self.infos.iter() {
             let info = info_ref.borrow();
+            if !info.shown {
+                continue;
+            }
             let name = if let Some(name) = info.name.as_ref() {
                 format!("{} <br/>", name)
             } else {
@@ -77,11 +80,14 @@ impl ExecutionContext {
         }
         for info_ref in self.infos.iter() {
             let info = info_ref.borrow();
+            if !info.shown {
+                continue;
+            }
             for dep in info.deps.iter() {
                 writeln!(
                     file,
                     "  node{} -> node{};",
-                    dep.upgrade().unwrap().borrow().relation_id,
+                    dep.upgrade().unwrap().borrow().shown_relation_id(),
                     info.relation_id
                 )?;
             }

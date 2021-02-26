@@ -60,6 +60,14 @@ impl NodeInfo {
                 .apply_to_shown(f)
         }
     }
+    pub(super) fn shown_relation_id(&self) -> RelationId {
+        if self.shown {
+            self.relation_id
+        } else {
+            assert_eq!(self.deps.len(), 1);
+            self.deps[0].upgrade().unwrap().borrow().shown_relation_id()
+        }
+    }
 }
 
 #[derive(Clone)]
