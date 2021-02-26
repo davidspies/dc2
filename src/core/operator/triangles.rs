@@ -3,6 +3,7 @@ use crate::core::borrow::BorrowOrDefault;
 use crate::core::is_map::IsAddMap;
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
+use crate::core::node::Node;
 use crate::core::{Relation, Step};
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -12,11 +13,11 @@ use std::ops::Mul;
 struct BiMap<A, B, C: Op<D = (A, B)>> {
     forward: HashMap<A, HashMap<B, C::R>>,
     backward: HashMap<B, HashMap<A, C::R>>,
-    inner: C,
+    inner: Node<C>,
 }
 
 impl<A, B, C: Op<D = (A, B)>> BiMap<A, B, C> {
-    fn new(inner: C) -> Self {
+    fn new(inner: Node<C>) -> Self {
         BiMap {
             forward: HashMap::new(),
             backward: HashMap::new(),
@@ -150,13 +151,14 @@ impl<'a, X: Key, Y: Key, R: Monoid + Mul<R, Output = R>, C1: Op<D = (X, Y), R = 
         assert_eq!(self.context_id, r3.context_id, "Context mismatch");
         Relation {
             context_id: self.context_id,
-            inner: Triangles {
+            inner: self.node_maker.make_node(Triangles {
                 mxy: BiMap::new(self.inner),
                 mxz: BiMap::new(r2.inner),
                 myz: BiMap::new(r3.inner),
-            },
+            }),
             depth: self.depth.max(r2.depth).max(r3.depth),
             phantom: PhantomData,
+            node_maker: self.node_maker,
         }
     }
 }

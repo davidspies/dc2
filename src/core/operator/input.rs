@@ -82,13 +82,14 @@ impl CreationContext {
         (
             Input {
                 inner: inner.clone(),
-                context_id: self.0,
+                context_id: self.context_id,
             },
             Relation {
-                inner: InputCollection(inner),
-                context_id: self.0,
+                inner: self.node_maker.make_node(InputCollection(inner)),
+                context_id: self.context_id,
                 depth: 0,
                 phantom: PhantomData,
+                node_maker: self.node_maker.clone(),
             },
         )
     }

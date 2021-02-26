@@ -1,5 +1,6 @@
 use super::stepper::{IsStepper, Stepper};
 use crate::core::key::Key;
+use crate::core::node::NodeMaker;
 use crate::core::operator::{Op, Receiver};
 use crate::core::Step;
 
@@ -41,12 +42,12 @@ impl<S: Key + Ord> Op for RegistrarInner<S> {
 }
 
 impl<S: Key + Ord> Registrar<S> {
-    pub(super) fn new_registrar(depth: usize) -> Self {
+    pub(super) fn new_registrar(depth: usize, node_maker: &NodeMaker) -> Self {
         Receiver::new(
-            RegistrarInner {
+            node_maker.make_node(RegistrarInner {
                 steppers: Vec::new(),
                 inner_step: 0,
-            },
+            }),
             depth,
         )
     }
@@ -54,9 +55,9 @@ impl<S: Key + Ord> Registrar<S> {
         &mut self,
         stepper: Stepper<S, D, C::R, C>,
     ) {
-        self.get_inner_mut().steppers.push(Box::new(stepper))
+        self.get_inner_mut().inner.steppers.push(Box::new(stepper))
     }
     pub(super) fn get_inner_step(&self) -> usize {
-        self.get_inner().inner_step
+        self.get_inner().inner.inner_step
     }
 }

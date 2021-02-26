@@ -9,6 +9,7 @@ use self::contextual::IsContext;
 use self::registrar::Registrar;
 pub use self::variable::Variable;
 use crate::core::key::Key;
+use crate::core::node::NodeMaker;
 use crate::core::{ContextId, CreationContext};
 
 impl<'a, Ctx: IsContext, S: Key + Ord> IsContext for SubContext<'a, Ctx, S> {
@@ -18,11 +19,15 @@ impl<'a, Ctx: IsContext, S: Key + Ord> IsContext for SubContext<'a, Ctx, S> {
     fn get_depth() -> usize {
         Ctx::get_depth() + 1
     }
+    fn get_node_maker(&self) -> &NodeMaker {
+        &self.node_maker
+    }
 }
 pub struct SubContext<'a, Ctx, S: Key + Ord> {
     parent: &'a Ctx,
     registrar: Registrar<S>,
     context_id: ContextId,
+    node_maker: NodeMaker,
 }
 pub struct Finalizer<'a, Ctx, S: Key + Ord> {
     parent: &'a Ctx,
@@ -36,12 +41,12 @@ impl CreationContext {
     /// not halting.
     ///
     /// Example:
-    /// 
+    ///
     /// Here we set the `step` parameter to () and so the subgraph isn't properly tiered:
     /// ```
     /// use dc2::{CreationContext, Op, Relation};
     /// use std::collections::HashMap;
-    /// 
+    ///
     /// let mut creation = CreationContext::new();
     /// let (verts_inp, verts) = creation.create_input::<char, _>();
     /// let (edges_inp, edges) = creation.create_input::<(char, char), _>();
@@ -81,7 +86,7 @@ impl CreationContext {
     /// // a path from 'a' to 'c'.
     /// assert!(trans.read(&context).contains_key(&(('a', 'c'))));
     /// ```
-    /// 
+    ///
     /// To do this correctly, we will tier the graph by the minimum distance between vertices:
     /// ```
     /// use dc2::{CreationContext, Op, Relation};
@@ -135,8 +140,9 @@ impl<'a, Ctx: IsContext, S: Key + Ord> SubContext<'a, Ctx, S> {
     fn from(parent: &'a Ctx) -> Self {
         SubContext {
             parent,
-            registrar: Registrar::new_registrar(Ctx::get_depth()),
+            registrar: Registrar::new_registrar(Ctx::get_depth(), parent.get_node_maker()),
             context_id: parent.get_context_id(),
+            node_maker: parent.get_node_maker().clone(),
         }
     }
     pub fn subgraph<'b, T: Key + Ord>(&'b mut self) -> SubContext<'b, Self, T> {

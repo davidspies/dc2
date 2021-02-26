@@ -29,7 +29,10 @@ impl<'a, S: Key + Ord, D: Key, R: Monoid> Variable<'a, S, D, R> {
 impl<'a, Ctx: IsContext, S: Key + Ord> SubContext<'a, Ctx, S> {
     pub fn variable<'b, D: Key, R: Monoid>(
         &'b mut self,
-    ) -> (Variable<'a, S, D, R>, Relation<'a, impl Op<D = (S, D), R = R>>) {
+    ) -> (
+        Variable<'a, S, D, R>,
+        Relation<'a, impl Op<D = (S, D), R = R>>,
+    ) {
         let rc = Rc::new(RefCell::new(HashMap::new()));
         (
             Variable {
@@ -39,10 +42,11 @@ impl<'a, Ctx: IsContext, S: Key + Ord> SubContext<'a, Ctx, S> {
                 phantom: PhantomData,
             },
             Relation {
-                inner: SimpleInput(rc),
+                inner: self.node_maker.make_node(SimpleInput(rc)),
                 context_id: self.context_id,
                 depth: Self::get_depth(),
                 phantom: PhantomData,
+                node_maker: self.node_maker.clone(),
             },
         )
     }

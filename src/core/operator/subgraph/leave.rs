@@ -2,12 +2,13 @@ use super::contextual::IsContext;
 use super::registrar::Registrar;
 use super::Finalizer;
 use crate::core::key::Key;
+use crate::core::node::Node;
 use crate::core::operator::Op;
 use crate::core::{Relation, Step};
 use std::marker::PhantomData;
 
 struct Leave<S: Key + Ord, C> {
-    inner: C,
+    inner: Node<C>,
     registrar: Registrar<S>,
 }
 
@@ -32,13 +33,14 @@ impl<'b, C: Op> Relation<'b, C> {
             "Context mismatch"
         );
         Relation {
-            inner: Leave {
+            inner: self.node_maker.make_node(Leave {
                 inner: self.inner,
                 registrar: finalizer.registrar.clone(),
-            },
+            }),
             depth: Ctx::get_depth(),
             context_id: self.context_id,
             phantom: PhantomData,
+            node_maker: self.node_maker,
         }
     }
 }

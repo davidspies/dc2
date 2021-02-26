@@ -1,6 +1,7 @@
 use crate::core::is_map::IsAddMap;
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
+use crate::core::node::Node;
 use crate::core::operator::Op;
 use crate::core::Step;
 use std::cell::RefCell;
@@ -16,14 +17,14 @@ pub(super) trait IsStepper<S> {
 pub(super) struct Stepper<S, D, R, C: Op<D = (S, D), R = R>> {
     pending: BTreeMap<S, HashMap<D, R>>,
     input: Rc<RefCell<HashMap<(S, D), R>>>,
-    output: C,
+    output: Node<C>,
 }
 
 impl<S, D, R, C: Op<D = (S, D), R = R>> Stepper<S, D, R, C> {
     pub(super) fn new(
         pending: BTreeMap<S, HashMap<D, R>>,
         input: Rc<RefCell<HashMap<(S, D), R>>>,
-        output: C,
+        output: Node<C>,
     ) -> Self {
         Stepper {
             pending,

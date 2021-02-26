@@ -1,11 +1,12 @@
 use super::Op;
 use crate::core::is_map::IsAddMap;
+use crate::core::node::Node;
 use crate::core::{Relation, Step};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
 struct Consolidate<C> {
-    inner: C,
+    inner: Node<C>,
 }
 
 impl<C: Op> Op for Consolidate<C> {
@@ -24,10 +25,11 @@ impl<C: Op> Op for Consolidate<C> {
 impl<'a, C: Op> Relation<'a, C> {
     pub fn consolidate(self) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
         Relation {
-            inner: Consolidate { inner: self.inner },
+            inner: self.node_maker.make_node(Consolidate { inner: self.inner }),
             context_id: self.context_id,
             depth: self.depth,
             phantom: PhantomData,
+            node_maker: self.node_maker,
         }
     }
 }

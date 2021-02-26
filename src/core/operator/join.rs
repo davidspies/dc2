@@ -3,14 +3,15 @@ use crate::core::borrow::BorrowOrDefault;
 use crate::core::is_map::IsAddMap;
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
+use crate::core::node::Node;
 use crate::core::{Relation, Step};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::ops::Mul;
 
 struct Join<LC, RC, K, LD, LR, RD, RR> {
-    left: LC,
-    right: RC,
+    left: Node<LC>,
+    right: Node<RC>,
     left_map: HashMap<K, HashMap<LD, LR>>,
     right_map: HashMap<K, HashMap<RD, RR>>,
 }
@@ -58,8 +59,8 @@ impl<
 }
 
 struct AntiJoin<LC, RC, K, LD, LR, RR> {
-    left: LC,
-    right: RC,
+    left: Node<LC>,
+    right: Node<RC>,
     left_map: HashMap<K, HashMap<LD, LR>>,
     right_map: HashMap<K, RR>,
 }
@@ -114,15 +115,16 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
     {
         assert_eq!(self.context_id, other.context_id, "Context mismatch");
         Relation {
-            inner: Join {
+            inner: self.node_maker.make_node(Join {
                 left: self.inner,
                 right: other.inner,
                 left_map: HashMap::new(),
                 right_map: HashMap::new(),
-            },
+            }),
             context_id: self.context_id,
             depth: self.depth.max(other.depth),
             phantom: PhantomData,
+            node_maker: self.node_maker,
         }
     }
     pub fn antijoin<C2: Op<D = K>>(
@@ -131,15 +133,16 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
     ) -> Relation<'a, impl Op<D = (K, D), R = C::R>> {
         assert_eq!(self.context_id, other.context_id, "Context mismatch");
         Relation {
-            inner: AntiJoin {
+            inner: self.node_maker.make_node(AntiJoin {
                 left: self.inner,
                 right: other.inner,
                 left_map: HashMap::new(),
                 right_map: HashMap::new(),
-            },
+            }),
             context_id: self.context_id,
             depth: self.depth.max(other.depth),
             phantom: PhantomData,
+            node_maker: self.node_maker,
         }
     }
 }

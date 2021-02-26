@@ -1,5 +1,6 @@
 use super::{ContextId, CreationContext, ExecutionContext, Relation, Step};
 use crate::core::is_map::IsAddMap;
+use crate::core::node::Node;
 use crate::core::operator::{DynOp, Op};
 use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
@@ -23,7 +24,7 @@ impl<C: Op, M: IsAddMap<C::D, C::R>> Arrangement<C::D, C::R, M, C> {
 }
 
 struct ArrangementInner<D, R, M: IsAddMap<D, R>, C: Op<D = D, R = R>> {
-    from: C,
+    from: Node<C>,
     value: M,
     step: usize,
 }
@@ -47,7 +48,7 @@ impl<C: Op> Relation<'static, C> {
         self,
         context: &CreationContext,
     ) -> Arrangement<C::D, C::R, M, C> {
-        assert_eq!(self.context_id, context.0, "Context mismatch");
+        assert_eq!(self.context_id, context.context_id, "Context mismatch");
         Arrangement {
             inner: RefCell::new(ArrangementInner {
                 from: self.inner,

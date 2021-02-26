@@ -1,11 +1,12 @@
 use super::Op;
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
+use crate::core::node::Node;
 use crate::core::{Relation, Step};
 use std::marker::PhantomData;
 
 struct FlatMap<C, MF> {
-    inner: C,
+    inner: Node<C>,
     op: MF,
 }
 
@@ -46,13 +47,14 @@ impl<'a, C: Op> Relation<'a, C> {
         f: F,
     ) -> Relation<'a, impl Op<D = D2, R = R2>> {
         Relation {
-            inner: FlatMap {
+            inner: self.node_maker.make_node(FlatMap {
                 inner: self.inner,
                 op: f,
-            },
+            }),
             context_id: self.context_id,
             depth: self.depth,
             phantom: PhantomData,
+            node_maker: self.node_maker,
         }
     }
 }

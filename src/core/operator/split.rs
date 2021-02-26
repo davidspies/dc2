@@ -2,6 +2,7 @@ use super::barrier::Barrier;
 use super::Op;
 use crate::core::is_map::IsAddMap;
 use crate::core::iter::TupleableWith;
+use crate::core::node::Node;
 use crate::core::{Relation, Step};
 use std::cell::{Ref, RefCell, RefMut};
 use std::collections::HashMap;
@@ -17,10 +18,10 @@ struct Source<C: Op> {
 pub(super) struct SourceRef<C: Op>(Rc<RefCell<Source<C>>>);
 
 impl<C: Op> SourceRef<C> {
-    pub(super) fn get_inner(&self) -> Ref<C> {
+    pub(super) fn get_inner(&self) -> Ref<Node<C>> {
         Ref::map(self.0.borrow(), |r| &r.inner.inner)
     }
-    pub(super) fn get_inner_mut(&self) -> RefMut<C> {
+    pub(super) fn get_inner_mut(&self) -> RefMut<Node<C>> {
         RefMut::map(self.0.borrow_mut(), |r| &mut r.inner.inner)
     }
     pub(super) fn propagate(&self, step: &Step) {
@@ -48,7 +49,7 @@ pub struct Receiver<C: Op> {
 }
 
 impl<C: Op> Receiver<C> {
-    pub(super) fn new(from: C, depth: usize) -> Self {
+    pub(super) fn new(from: Node<C>, depth: usize) -> Self {
         let inner = Barrier::new(from, depth);
         let data = Rc::new(RefCell::new(HashMap::new()));
         let source = SourceRef(Rc::new(RefCell::new(Source {
@@ -57,10 +58,10 @@ impl<C: Op> Receiver<C> {
         })));
         Receiver { data, source }
     }
-    pub(super) fn get_inner(&self) -> Ref<C> {
+    pub(super) fn get_inner(&self) -> Ref<Node<C>> {
         self.source.get_inner()
     }
-    pub(super) fn get_inner_mut(&self) -> RefMut<C> {
+    pub(super) fn get_inner_mut(&self) -> RefMut<Node<C>> {
         self.source.get_inner_mut()
     }
     pub(super) fn get_source_ref(&self) -> SourceRef<C> {
@@ -101,10 +102,13 @@ impl<'a, C: Op> Relation<'a, C> {
     /// Produces a version of this relation which can be cloned to use in multiple places.
     pub fn split(self) -> Relation<'a, Receiver<C>> {
         Relation {
-            inner: Receiver::new(self.inner, self.depth),
+            inner: self
+                .node_maker
+                .make_node(Receiver::new(self.inner, self.depth)),
             context_id: self.context_id,
             depth: self.depth,
             phantom: PhantomData,
+            node_maker: self.node_maker,
         }
     }
 }

@@ -5,9 +5,11 @@ pub mod is_map;
 pub mod iter;
 pub mod key;
 pub mod monoid;
+mod node;
 mod operator;
 
 pub use self::arrangement::Arrangement;
+use self::node::{Node, NodeMaker};
 pub use self::operator::{subgraph, DynOp, Input, IsReduce, Op, Receiver, ReduceOutput};
 use std::marker::PhantomData;
 use std::sync::atomic::{self, AtomicUsize};
@@ -20,11 +22,17 @@ fn next_id() -> ContextId {
 
 type ContextId = usize;
 
-pub struct CreationContext(ContextId);
+pub struct CreationContext {
+    context_id: ContextId,
+    node_maker: NodeMaker,
+}
 
 impl CreationContext {
     pub fn new() -> Self {
-        CreationContext(next_id())
+        CreationContext {
+            context_id: next_id(),
+            node_maker: NodeMaker::new(),
+        }
     }
 }
 
@@ -37,7 +45,7 @@ impl CreationContext {
     pub fn begin(self) -> ExecutionContext {
         ExecutionContext {
             step: 0,
-            context_id: self.0,
+            context_id: self.context_id,
         }
     }
 }
@@ -103,15 +111,16 @@ impl<'a> Step<'a> {
 
 #[derive(Clone)]
 pub struct Relation<'a, C> {
-    inner: C,
+    inner: Node<C>,
     context_id: ContextId,
     depth: usize,
     phantom: PhantomData<&'a ()>,
+    node_maker: NodeMaker,
 }
 
 impl<'a, C> Relation<'a, C> {
-    //TODO Placeholder
-    pub fn named(self, _name: &str) -> Self {
+    pub fn named(mut self, name: &str) -> Self {
+        self.inner.set_name(name.to_string());
         self
     }
 }

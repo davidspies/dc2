@@ -3,6 +3,7 @@ use super::Op;
 use crate::core::is_map::{IsAddMap, IsDiscardMap, IsMap, IsRemoveMap};
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
+use crate::core::node::Node;
 use crate::core::{ContextId, CreationContext, ExecutionContext, Relation, Step};
 use std::cell::Ref;
 use std::collections::{hash_map, HashMap, HashSet};
@@ -11,7 +12,7 @@ use std::mem;
 use std::ops::Deref;
 
 pub struct Reduce<D2, R2, C, K, M1, M2, F: Fn(&K, &M1) -> M2> {
-    inner: C,
+    inner: Node<C>,
     input_maps: HashMap<K, M1>,
     output_maps: HashMap<K, M2>,
     proc: F,
@@ -95,16 +96,17 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
         proc: MF,
     ) -> Relation<'a, impl IsReduce<K = K, M = M2> + Op<D = (K, D2), R = R2>> {
         Relation {
-            inner: Reduce {
+            inner: self.node_maker.make_node(Reduce {
                 inner: self.inner,
                 input_maps: HashMap::new(),
                 output_maps: HashMap::new(),
                 proc,
                 phantom: PhantomData,
-            },
+            }),
             context_id: self.context_id,
             depth: self.depth,
             phantom: PhantomData,
+            node_maker: self.node_maker,
         }
     }
 }
@@ -141,11 +143,11 @@ impl<C: IsReduce + Op> Relation<'static, C> {
         Relation<'static, Receiver<C>>,
         impl ReduceOutput<K = C::K, M = C::M>,
     ) {
-        assert_eq!(self.context_id, context.0, "Context mismatch");
+        assert_eq!(self.context_id, context.context_id, "Context mismatch");
         assert_eq!(self.depth, 0);
         let context_id = self.context_id;
         let r = self.split();
-        let inner = r.inner.get_source_ref();
+        let inner = r.inner.inner.get_source_ref();
         (r, ReduceOutputImpl { context_id, inner })
     }
 }
@@ -162,7 +164,7 @@ impl<C: IsReduce + Op> ReduceOutput for ReduceOutputImpl<C> {
     fn read<'a>(&'a self, context: &'a ExecutionContext) -> Ref<'a, HashMap<C::K, C::M>> {
         assert_eq!(self.context_id, context.context_id, "Context mismatch");
         self.inner.propagate(&Step::Root(context.step));
-        Ref::map(self.inner.get_inner(), IsReduce::get_ref)
+        Ref::map(self.inner.get_inner(), |n| IsReduce::get_ref(&n.inner))
     }
 }
 
