@@ -47,11 +47,6 @@ impl<'a, C: Op> Relation<'a, C> {
     /// explicitly (however there is an alias for this function: `relation.enter()` which should
     /// generally be used on inputs to subgraphs).
     pub fn barrier(self) -> Relation<'a, Barrier<C>> {
-        Relation::new(
-            vec![self.dep()],
-            Barrier::new(self.inner, self.depth),
-            self.node_maker,
-        )
-        .hidden()
+        Relation::new(vec![self.dep()], Barrier::new(self.inner, self.depth)).hidden()
     }
 }

@@ -154,7 +154,6 @@ impl<'a, X: Key, Y: Key, R: Monoid + Mul<R, Output = R>, C1: Op<D = (X, Y), R = 
                 mxz: BiMap::new(r2.inner),
                 myz: BiMap::new(r3.inner),
             },
-            self.node_maker,
         )
     }
 }

@@ -54,7 +54,6 @@ impl<'a, C: Op> Relation<'a, C> {
                 inner: self.inner,
                 op: f,
             },
-            self.node_maker,
         )
     }
 }

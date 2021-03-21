@@ -126,7 +126,6 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
                 left_map: HashMap::new(),
                 right_map: HashMap::new(),
             },
-            self.node_maker,
         )
     }
     pub fn antijoin<C2: Op<D = K>>(
@@ -141,7 +140,6 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
                 left_map: HashMap::new(),
                 right_map: HashMap::new(),
             },
-            self.node_maker,
         )
     }
 }

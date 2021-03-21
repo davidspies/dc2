@@ -108,7 +108,6 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
                 proc,
                 phantom: PhantomData,
             },
-            self.node_maker,
         )
     }
 }

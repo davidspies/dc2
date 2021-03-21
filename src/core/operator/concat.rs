@@ -33,7 +33,6 @@ impl<'a, C: Op> Relation<'a, C> {
                 left: self.inner,
                 right: other.inner,
             },
-            self.node_maker,
         )
     }
 }

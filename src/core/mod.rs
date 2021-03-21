@@ -165,14 +165,16 @@ struct Dep {
     context_id: usize,
     depth: usize,
     node_info: Weak<RefCell<NodeInfo>>,
+    node_maker: NodeMaker,
 }
 
 impl<'a, C: Op> Relation<'a, C> {
-    fn new(deps: Vec<Dep>, inner: C, node_maker: NodeMaker) -> Self {
+    fn new(deps: Vec<Dep>, inner: C) -> Self {
         let context_id = deps[0].context_id;
         for dep in &deps[1..] {
             assert_eq!(dep.context_id, context_id, "Context mismatch")
         }
+        let node_maker = deps[0].node_maker.clone();
         Relation {
             depth: deps.iter().map(|x| x.depth).max().unwrap(),
             inner: node_maker.make_node(deps.into_iter().map(|x| x.node_info).collect(), inner),
@@ -186,6 +188,7 @@ impl<'a, C: Op> Relation<'a, C> {
             context_id: self.context_id,
             depth: self.depth,
             node_info: self.node_ref(),
+            node_maker: self.node_maker.clone(),
         }
     }
     pub fn named(mut self, name: &str) -> Self {
