@@ -99,22 +99,17 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
         self,
         proc: MF,
     ) -> Relation<'a, impl IsReduce<K = K, M = M2> + Op<D = (K, D2), R = R2>> {
-        Relation {
-            inner: self.node_maker.make_node(
-                vec![self.node_ref()],
-                Reduce {
-                    inner: self.inner,
-                    input_maps: HashMap::new(),
-                    output_maps: HashMap::new(),
-                    proc,
-                    phantom: PhantomData,
-                },
-            ),
-            context_id: self.context_id,
-            depth: self.depth,
-            phantom: PhantomData,
-            node_maker: self.node_maker,
-        }
+        Relation::new(
+            vec![self.dep()],
+            Reduce {
+                inner: self.inner,
+                input_maps: HashMap::new(),
+                output_maps: HashMap::new(),
+                proc,
+                phantom: PhantomData,
+            },
+            self.node_maker,
+        )
     }
 }
 

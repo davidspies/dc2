@@ -1,7 +1,6 @@
 use super::Op;
 use crate::core::node::Node;
 use crate::core::{Relation, Step};
-use std::marker::PhantomData;
 
 pub struct Barrier<C> {
     pub(super) inner: Node<C>,
@@ -48,15 +47,11 @@ impl<'a, C: Op> Relation<'a, C> {
     /// explicitly (however there is an alias for this function: `relation.enter()` which should
     /// generally be used on inputs to subgraphs).
     pub fn barrier(self) -> Relation<'a, Barrier<C>> {
-        Relation {
-            inner: self
-                .node_maker
-                .make_node(vec![self.node_ref()], Barrier::new(self.inner, self.depth)),
-            context_id: self.context_id,
-            depth: self.depth,
-            phantom: PhantomData,
-            node_maker: self.node_maker,
-        }
+        Relation::new(
+            vec![self.dep()],
+            Barrier::new(self.inner, self.depth),
+            self.node_maker,
+        )
         .hidden()
     }
 }

@@ -4,7 +4,6 @@ use crate::core::monoid::Monoid;
 use crate::core::node::Node;
 use crate::core::Relation;
 use crate::core::Step;
-use std::marker::PhantomData;
 
 pub struct DynOp<D, R = isize>(Box<dyn DynOpT<D = D, R = R>>);
 
@@ -37,15 +36,11 @@ impl<'a, C: Op> Relation<'a, C> {
     /// Throws out the implementation details in the template parameter, simplifying the
     /// type-signature at a cost of having to look them up at run-time.
     pub fn dynamic(self) -> Relation<'a, DynOp<C::D, C::R>> {
-        Relation {
-            inner: self
-                .node_maker
-                .make_node(vec![self.node_ref()], DynOp(Box::new(self.inner))),
-            context_id: self.context_id,
-            depth: self.depth,
-            phantom: PhantomData,
-            node_maker: self.node_maker,
-        }
+        Relation::new(
+            vec![self.dep()],
+            DynOp(Box::new(self.inner)),
+            self.node_maker,
+        )
         .hidden()
     }
 }

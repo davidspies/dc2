@@ -7,7 +7,6 @@ use crate::core::node::Node;
 use crate::core::{Relation, Step};
 use std::collections::HashMap;
 use std::hash::Hash;
-use std::marker::PhantomData;
 use std::ops::Mul;
 
 struct BiMap<A, B, C: Op<D = (A, B)>> {
@@ -148,21 +147,14 @@ impl<'a, X: Key, Y: Key, R: Monoid + Mul<R, Output = R>, C1: Op<D = (X, Y), R = 
         r2: Relation<'a, C2>,
         r3: Relation<'a, C3>,
     ) -> Relation<'a, impl Op<D = (X, Y, Z), R = R>> {
-        assert_eq!(self.context_id, r2.context_id, "Context mismatch");
-        assert_eq!(self.context_id, r3.context_id, "Context mismatch");
-        Relation {
-            context_id: self.context_id,
-            inner: self.node_maker.make_node(
-                vec![self.node_ref(), r2.node_ref(), r3.node_ref()],
-                Triangles {
-                    mxy: BiMap::new(self.inner),
-                    mxz: BiMap::new(r2.inner),
-                    myz: BiMap::new(r3.inner),
-                },
-            ),
-            depth: self.depth.max(r2.depth).max(r3.depth),
-            phantom: PhantomData,
-            node_maker: self.node_maker,
-        }
+        Relation::new(
+            vec![self.dep(), r2.dep(), r3.dep()],
+            Triangles {
+                mxy: BiMap::new(self.inner),
+                mxz: BiMap::new(r2.inner),
+                myz: BiMap::new(r3.inner),
+            },
+            self.node_maker,
+        )
     }
 }

@@ -6,7 +6,6 @@ use crate::core::monoid::Monoid;
 use crate::core::node::Node;
 use crate::core::{Relation, Step};
 use std::collections::HashMap;
-use std::marker::PhantomData;
 use std::ops::Mul;
 
 struct Join<LC, RC, K, LD, LR, RD, RR> {
@@ -119,42 +118,30 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
     where
         C::R: Mul<C2::R, Output = OR>,
     {
-        assert_eq!(self.context_id, other.context_id, "Context mismatch");
-        Relation {
-            inner: self.node_maker.make_node(
-                vec![self.node_ref(), other.node_ref()],
-                Join {
-                    left: self.inner,
-                    right: other.inner,
-                    left_map: HashMap::new(),
-                    right_map: HashMap::new(),
-                },
-            ),
-            context_id: self.context_id,
-            depth: self.depth.max(other.depth),
-            phantom: PhantomData,
-            node_maker: self.node_maker,
-        }
+        Relation::new(
+            vec![self.dep(), other.dep()],
+            Join {
+                left: self.inner,
+                right: other.inner,
+                left_map: HashMap::new(),
+                right_map: HashMap::new(),
+            },
+            self.node_maker,
+        )
     }
     pub fn antijoin<C2: Op<D = K>>(
         self,
         other: Relation<'a, C2>,
     ) -> Relation<'a, impl Op<D = (K, D), R = C::R>> {
-        assert_eq!(self.context_id, other.context_id, "Context mismatch");
-        Relation {
-            inner: self.node_maker.make_node(
-                vec![self.node_ref(), other.node_ref()],
-                AntiJoin {
-                    left: self.inner,
-                    right: other.inner,
-                    left_map: HashMap::new(),
-                    right_map: HashMap::new(),
-                },
-            ),
-            context_id: self.context_id,
-            depth: self.depth.max(other.depth),
-            phantom: PhantomData,
-            node_maker: self.node_maker,
-        }
+        Relation::new(
+            vec![self.dep(), other.dep()],
+            AntiJoin {
+                left: self.inner,
+                right: other.inner,
+                left_map: HashMap::new(),
+                right_map: HashMap::new(),
+            },
+            self.node_maker,
+        )
     }
 }

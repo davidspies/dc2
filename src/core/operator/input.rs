@@ -81,7 +81,7 @@ impl CreationContext {
         }));
         (
             Input {
-                inner: inner.clone(),
+                inner: Rc::clone(&inner),
                 context_id: self.context_id,
             },
             Relation {

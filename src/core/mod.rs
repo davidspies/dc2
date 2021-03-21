@@ -11,12 +11,15 @@ mod operator;
 pub use self::arrangement::Arrangement;
 use self::node::{Node, NodeInfo, NodeMaker};
 pub use self::operator::{subgraph, DynOp, Input, IsReduce, Op, Receiver, ReduceOutput};
-use std::cell::RefCell;
-use std::io::{self, Write};
-use std::marker::PhantomData;
-use std::mem;
-use std::rc::Rc;
-use std::sync::atomic::{self, AtomicUsize};
+use std::{
+    cell::RefCell,
+    io::{self, Write},
+    marker::PhantomData,
+    mem,
+    rc::{Rc, Weak},
+    sync::atomic,
+    sync::atomic::AtomicUsize,
+};
 
 static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
 
@@ -143,22 +146,48 @@ impl<'a> Step<'a> {
     fn append(&'a self, step: usize) -> Step<'a> {
         Self::Sub(Sub {
             depth: self.get_depth() + 1,
-            step: step,
+            step,
             parent: self,
         })
     }
 }
 
 #[derive(Clone)]
-pub struct Relation<'a, C> {
-    inner: Node<C>,
+pub struct Relation<'a, C: ?Sized> {
     context_id: ContextId,
     depth: usize,
     phantom: PhantomData<&'a ()>,
     node_maker: NodeMaker,
+    inner: Node<C>,
+}
+
+struct Dep {
+    context_id: usize,
+    depth: usize,
+    node_info: Weak<RefCell<NodeInfo>>,
 }
 
 impl<'a, C: Op> Relation<'a, C> {
+    fn new(deps: Vec<Dep>, inner: C, node_maker: NodeMaker) -> Self {
+        let context_id = deps[0].context_id;
+        for dep in &deps[1..] {
+            assert_eq!(dep.context_id, context_id, "Context mismatch")
+        }
+        Relation {
+            depth: deps.iter().map(|x| x.depth).max().unwrap(),
+            inner: node_maker.make_node(deps.into_iter().map(|x| x.node_info).collect(), inner),
+            context_id,
+            phantom: PhantomData,
+            node_maker,
+        }
+    }
+    fn dep(&self) -> Dep {
+        Dep {
+            context_id: self.context_id,
+            depth: self.depth,
+            node_info: self.node_ref(),
+        }
+    }
     pub fn named(mut self, name: &str) -> Self {
         self.inner.set_name(name.to_string());
         self

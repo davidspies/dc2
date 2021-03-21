@@ -6,7 +6,6 @@ use crate::core::node::Node;
 use crate::core::{Relation, Step};
 use std::cell::{Ref, RefCell, RefMut};
 use std::collections::HashMap;
-use std::marker::PhantomData;
 use std::mem;
 use std::rc::Rc;
 
@@ -104,15 +103,11 @@ impl<C: Op> Op for Receiver<C> {
 impl<'a, C: Op> Relation<'a, C> {
     /// Produces a version of this relation which can be cloned to use in multiple places.
     pub fn split(self) -> Relation<'a, Receiver<C>> {
-        Relation {
-            inner: self
-                .node_maker
-                .make_node(vec![self.node_ref()], Receiver::new(self.inner, self.depth)),
-            context_id: self.context_id,
-            depth: self.depth,
-            phantom: PhantomData,
-            node_maker: self.node_maker,
-        }
+        Relation::new(
+            vec![self.dep()],
+            Receiver::new(self.inner, self.depth),
+            self.node_maker,
+        )
         .hidden()
     }
 }

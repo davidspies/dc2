@@ -3,7 +3,6 @@ use crate::core::key::Key;
 use crate::core::monoid::Monoid;
 use crate::core::node::Node;
 use crate::core::{Relation, Step};
-use std::marker::PhantomData;
 
 struct Concat<C1, C2> {
     left: Node<C1>,
@@ -28,19 +27,13 @@ impl<'a, C: Op> Relation<'a, C> {
         self,
         other: Relation<C2>,
     ) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
-        assert_eq!(self.context_id, other.context_id, "Context mismatch");
-        Relation {
-            inner: self.node_maker.make_node(
-                vec![self.node_ref(), other.node_ref()],
-                Concat {
-                    left: self.inner,
-                    right: other.inner,
-                },
-            ),
-            context_id: self.context_id,
-            depth: self.depth.max(other.depth),
-            phantom: PhantomData,
-            node_maker: self.node_maker,
-        }
+        Relation::new(
+            vec![self.dep(), other.dep()],
+            Concat {
+                left: self.inner,
+                right: other.inner,
+            },
+            self.node_maker,
+        )
     }
 }

@@ -5,9 +5,9 @@ use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 
 #[derive(Clone)]
-pub(super) struct Node<C> {
-    pub(super) inner: C,
+pub(super) struct Node<C: ?Sized> {
     pub(super) info: Rc<RefCell<NodeInfo>>,
+    pub(super) inner: C,
 }
 
 impl<C: Op> Node<C> {
@@ -97,7 +97,7 @@ impl NodeMaker {
     }
 }
 
-impl<C: Op> Relation<'_, C> {
+impl<C: ?Sized> Relation<'_, C> {
     pub(super) fn node_ref(&self) -> Weak<RefCell<NodeInfo>> {
         Rc::downgrade(&self.inner.info)
     }
