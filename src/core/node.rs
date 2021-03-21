@@ -1,8 +1,9 @@
-use super::Relation;
-use crate::core::operator::Op;
-use crate::core::Step;
-use std::cell::RefCell;
-use std::rc::{Rc, Weak};
+use crate::core::{operator::Op, InputTrigger, Relation, Step};
+use std::{
+    cell::RefCell,
+    collections::HashSet,
+    rc::{Rc, Weak},
+};
 
 #[derive(Clone)]
 pub(super) struct Node<C: ?Sized> {
@@ -27,6 +28,10 @@ impl<C: Op> Node<C> {
     pub(super) fn node_ref(&self) -> Weak<RefCell<NodeInfo>> {
         Rc::downgrade(&self.info)
     }
+    pub(super) fn set_trigger(self, t: InputTrigger) -> Self {
+        self.info.borrow_mut().triggers = TriggerState::Visited(vec![t].into_iter().collect());
+        self
+    }
 }
 
 type RelationId = usize;
@@ -39,6 +44,22 @@ pub(super) struct NodeInfo {
     pub(super) relation_id: RelationId,
     pub(super) deps: Vec<Weak<RefCell<NodeInfo>>>,
     pub(super) hideable: bool,
+    triggers: TriggerState,
+}
+
+enum TriggerState {
+    Unvisited,
+    Searching(usize),
+    Visited(HashSet<InputTrigger>),
+}
+
+impl TriggerState {
+    fn is_unvisited(&self) -> bool {
+        match self {
+            Self::Unvisited => true,
+            _ => false,
+        }
+    }
 }
 
 impl NodeInfo {
@@ -68,6 +89,47 @@ impl NodeInfo {
             self.deps[0].upgrade().unwrap().borrow().shown_relation_id()
         }
     }
+    pub(super) fn determine_inputs(this: Rc<RefCell<Self>>) -> HashSet<InputTrigger> {
+        let (d, equ, res) = Self::determine_inputs_helper(this, 0);
+        assert_eq!(d, 0);
+        assert!(equ.is_empty());
+        res
+    }
+    fn determine_inputs_helper(
+        this: Rc<RefCell<Self>>,
+        depth: usize,
+    ) -> (usize, Vec<Rc<RefCell<NodeInfo>>>, HashSet<InputTrigger>) {
+        if this.borrow().triggers.is_unvisited() {
+            this.borrow_mut().triggers = TriggerState::Searching(depth);
+            let mut min_depth = depth + 1;
+            let mut equivalent = Vec::new();
+            let mut res = HashSet::new();
+            for dep in this.borrow().deps.iter() {
+                let (cycle_depth, dep_equivalent, x) =
+                    Self::determine_inputs_helper(dep.upgrade().unwrap(), depth + 1);
+                min_depth = min_depth.min(cycle_depth);
+                equivalent.extend(dep_equivalent);
+                res.extend(x);
+            }
+            if min_depth < depth {
+                this.borrow_mut().triggers = TriggerState::Searching(min_depth);
+                equivalent.push(this);
+                (min_depth, equivalent, res)
+            } else {
+                this.borrow_mut().triggers = TriggerState::Visited(res.clone());
+                for equ in equivalent {
+                    equ.borrow_mut().triggers = TriggerState::Visited(res.clone());
+                }
+                (depth, Vec::new(), res)
+            }
+        } else {
+            match &this.borrow().triggers {
+                &TriggerState::Unvisited => panic!("Unreachable"),
+                &TriggerState::Searching(d) => (d, Vec::new(), HashSet::new()),
+                TriggerState::Visited(x) => (depth, Vec::new(), x.clone()),
+            }
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -91,6 +153,7 @@ impl NodeMaker {
             relation_id: infos.len(),
             deps,
             hideable: C::hideable(),
+            triggers: TriggerState::Unvisited,
         }));
         infos.push(Rc::clone(&info));
         Node { inner, info }
