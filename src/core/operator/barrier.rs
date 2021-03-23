@@ -4,20 +4,15 @@ use crate::core::{Relation, Step};
 
 pub struct Barrier<C> {
     pub(super) inner: Node<C>,
-    depth: usize,
     step: usize,
 }
 
-impl<C> Barrier<C> {
-    pub(super) fn new(inner: Node<C>, depth: usize) -> Self {
-        Barrier {
-            inner,
-            depth,
-            step: 0,
-        }
+impl<C: Op> Barrier<C> {
+    pub(super) fn new(inner: Node<C>) -> Self {
+        Barrier { inner, step: 0 }
     }
     pub(super) fn dirty(&self, step: &Step) -> bool {
-        let step_for_depth = step.step_for(self.depth);
+        let step_for_depth = step.step_for(self.inner.depth());
         let against = step_for_depth.get_last();
         self.step < against
     }
@@ -30,7 +25,7 @@ impl<C: Op> Op for Barrier<C> {
         "barrier"
     }
     fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: &Step, send: F) {
-        let step_for_depth = step.step_for(self.depth);
+        let step_for_depth = step.step_for(self.inner.depth());
         let against = step_for_depth.get_last();
         if self.step < against {
             self.step = against;
@@ -47,6 +42,6 @@ impl<'a, C: Op> Relation<'a, C> {
     /// explicitly (however there is an alias for this function: `relation.enter()` which should
     /// generally be used on inputs to subgraphs).
     pub fn barrier(self) -> Relation<'a, Barrier<C>> {
-        Relation::new(vec![self.dep()], Barrier::new(self.inner, self.depth)).hidden()
+        Relation::new(vec![self.dep()], Barrier::new(self.inner)).hidden()
     }
 }

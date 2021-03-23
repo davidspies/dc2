@@ -145,7 +145,7 @@ impl<C: IsReduce + Op> Relation<'static, C> {
         impl ReduceOutput<K = C::K, M = C::M>,
     ) {
         assert_eq!(self.context_id, context.context_id, "Context mismatch");
-        assert_eq!(self.depth, 0);
+        assert_eq!(self.depth(), 0);
         let context_id = self.context_id;
         let r = self.split();
         let inner = r.inner.inner.get_source_ref();
@@ -153,7 +153,7 @@ impl<C: IsReduce + Op> Relation<'static, C> {
     }
     pub fn reduce_output(self, context: &CreationContext) -> impl ReduceOutput<K = C::K, M = C::M> {
         assert_eq!(self.context_id, context.context_id, "Context mismatch");
-        assert_eq!(self.depth, 0);
+        assert_eq!(self.depth(), 0);
         let context_id = self.context_id;
         let r = self.barrier();
         ReduceOutputImpl {

@@ -24,12 +24,12 @@ impl<C: Op> Node<C> {
             info.borrow_mut().message_count += 1;
         })
     }
-    pub(super) fn node_ref(&self) -> Weak<RefCell<NodeInfo>> {
-        Rc::downgrade(&self.info)
-    }
     pub(super) fn as_registrar(self) -> Self {
         self.info.borrow_mut().is_registrar = true;
         self
+    }
+    pub(super) fn depth(&self) -> usize {
+        self.info.borrow().depth
     }
     pub(super) fn with_depth(self, depth: usize) -> Self {
         self.info.borrow_mut().depth = depth;
@@ -93,9 +93,9 @@ impl NodeMaker {
     }
     pub(super) fn make_node<C: Op>(&self, deps: Vec<Weak<RefCell<NodeInfo>>>, inner: C) -> Node<C> {
         let mut infos = self.infos.borrow_mut();
-        let depth = infos
+        let depth = deps
             .iter()
-            .map(|inf| inf.borrow().depth)
+            .map(|x| x.upgrade().unwrap().borrow().depth)
             .max()
             .unwrap_or(0);
         let info = Rc::new(RefCell::new(NodeInfo {

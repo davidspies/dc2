@@ -169,7 +169,6 @@ impl<'a> Step<'a> {
 #[derive(Clone)]
 pub struct Relation<'a, C: ?Sized> {
     context_id: ContextId,
-    depth: usize,
     phantom: PhantomData<&'a ()>,
     node_maker: NodeMaker,
     inner: Node<C>,
@@ -177,7 +176,6 @@ pub struct Relation<'a, C: ?Sized> {
 
 struct Dep {
     context_id: usize,
-    depth: usize,
     node_info: Weak<RefCell<NodeInfo>>,
     node_maker: NodeMaker,
 }
@@ -190,7 +188,6 @@ impl<'a, C: Op> Relation<'a, C> {
         }
         let node_maker = deps[0].node_maker.clone();
         Relation {
-            depth: deps.iter().map(|x| x.depth).max().unwrap(),
             inner: node_maker.make_node(deps.into_iter().map(|x| x.node_info).collect(), inner),
             context_id,
             phantom: PhantomData,
@@ -200,7 +197,6 @@ impl<'a, C: Op> Relation<'a, C> {
     fn dep(&self) -> Dep {
         Dep {
             context_id: self.context_id,
-            depth: self.depth,
             node_info: self.node_ref(),
             node_maker: self.node_maker.clone(),
         }
@@ -231,5 +227,12 @@ impl<'a, C: Op> Relation<'a, C> {
     fn set_shown(self, shown: bool) -> Self {
         self.inner.info.borrow_mut().shown = shown;
         self
+    }
+    fn with_depth(self, depth: usize) -> Self {
+        self.inner.info.borrow_mut().depth = depth;
+        self
+    }
+    fn depth(&self) -> usize {
+        self.inner.info.borrow().depth
     }
 }

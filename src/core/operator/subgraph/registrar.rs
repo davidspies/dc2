@@ -3,6 +3,7 @@ use crate::core::key::Key;
 use crate::core::node::NodeMaker;
 use crate::core::operator::{Op, Receiver};
 use crate::core::Step;
+use std::rc::Rc;
 
 pub(super) struct RegistrarInner<S> {
     steppers: Vec<Box<dyn IsStepper<S>>>,
@@ -56,8 +57,7 @@ impl<S: Key + Ord> Registrar<S> {
                     },
                 )
                 .as_registrar()
-                .with_depth(depth + 1),
-            depth,
+                .with_depth(depth),
         )
     }
     pub(super) fn add_stepper<D: Key, C: Op<D = (S, D)>>(
@@ -66,7 +66,11 @@ impl<S: Key + Ord> Registrar<S> {
     ) {
         let mut inner = self.get_inner_mut();
         assert!(inner.info.borrow().shown);
-        inner.info.borrow_mut().deps.push(stepper.node_ref());
+        inner
+            .info
+            .borrow_mut()
+            .deps
+            .push(Rc::downgrade(stepper.node_ref()));
         inner.inner.steppers.push(Box::new(stepper));
     }
     pub(super) fn get_inner_step(&self) -> usize {

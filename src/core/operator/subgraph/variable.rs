@@ -41,7 +41,7 @@ impl<'a, Ctx: IsContext, S: Key + Ord> SubContext<'a, Ctx, S> {
         let new_node = self
             .node_maker
             .make_node(
-                vec![self.registrar.get_inner().node_ref()],
+                vec![Rc::downgrade(&self.registrar.get_inner().info)],
                 SimpleInput {
                     pending: Rc::clone(&pending),
                 },
@@ -58,7 +58,6 @@ impl<'a, Ctx: IsContext, S: Key + Ord> SubContext<'a, Ctx, S> {
             Relation {
                 inner: new_node,
                 context_id: self.context_id,
-                depth,
                 phantom: PhantomData,
                 node_maker: self.node_maker.clone(),
             },

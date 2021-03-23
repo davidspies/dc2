@@ -89,7 +89,6 @@ impl CreationContext {
                     .node_maker
                     .make_node(Vec::new(), InputCollection(inner)),
                 context_id: self.context_id,
-                depth: 0,
                 phantom: PhantomData,
                 node_maker: self.node_maker.clone(),
             },

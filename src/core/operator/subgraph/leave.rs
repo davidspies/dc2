@@ -5,7 +5,6 @@ use crate::core::key::Key;
 use crate::core::node::Node;
 use crate::core::operator::Op;
 use crate::core::{Relation, Step};
-use std::marker::PhantomData;
 
 struct Leave<S: Key + Ord, C> {
     inner: Node<C>,
@@ -35,22 +34,13 @@ impl<'b, C: Op> Relation<'b, C> {
             finalizer.parent.get_context_id(),
             "Context mismatch"
         );
-        let depth = Ctx::get_depth();
-        Relation {
-            inner: self
-                .node_maker
-                .make_node(
-                    vec![finalizer.node_ref(), self.node_ref()],
-                    Leave {
-                        inner: self.inner,
-                        registrar: finalizer.registrar.clone(),
-                    },
-                )
-                .with_depth(depth),
-            depth,
-            context_id: self.context_id,
-            phantom: PhantomData,
-            node_maker: self.node_maker,
-        }
+        Relation::new(
+            vec![finalizer.dep(), self.dep()],
+            Leave {
+                inner: self.inner,
+                registrar: finalizer.registrar.clone(),
+            },
+        )
+        .with_depth(Ctx::get_depth())
     }
 }

@@ -48,8 +48,8 @@ pub struct Receiver<C: Op> {
 }
 
 impl<C: Op> Receiver<C> {
-    pub(super) fn new(from: Node<C>, depth: usize) -> Self {
-        let inner = Barrier::new(from, depth);
+    pub(super) fn new(from: Node<C>) -> Self {
+        let inner = Barrier::new(from);
         let data = Rc::new(RefCell::new(HashMap::new()));
         let source = SourceRef(Rc::new(RefCell::new(Source {
             inner,
@@ -103,6 +103,6 @@ impl<C: Op> Op for Receiver<C> {
 impl<'a, C: Op> Relation<'a, C> {
     /// Produces a version of this relation which can be cloned to use in multiple places.
     pub fn split(self) -> Relation<'a, Receiver<C>> {
-        Relation::new(vec![self.dep()], Receiver::new(self.inner, self.depth)).hidden()
+        Relation::new(vec![self.dep()], Receiver::new(self.inner)).hidden()
     }
 }

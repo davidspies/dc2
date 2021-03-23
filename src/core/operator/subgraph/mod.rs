@@ -8,11 +8,11 @@ mod variable;
 use self::contextual::IsContext;
 use self::registrar::Registrar;
 pub use self::variable::Variable;
-use crate::core::key::Key;
 use crate::core::node::{NodeInfo, NodeMaker};
+use crate::core::{key::Key, Dep};
 use crate::core::{ContextId, CreationContext};
-use std::cell::RefCell;
-use std::rc::Weak;
+use std::cell::{Ref, RefCell};
+use std::rc::Rc;
 
 impl<'a, Ctx: IsContext, S: Key + Ord> IsContext for SubContext<'a, Ctx, S> {
     fn get_context_id(&self) -> ContextId {
@@ -34,11 +34,21 @@ pub struct SubContext<'a, Ctx, S: Key + Ord> {
 pub struct Finalizer<'a, Ctx, S: Key + Ord> {
     parent: &'a Ctx,
     registrar: Registrar<S>,
+    node_maker: NodeMaker,
 }
 
-impl<Ctx, S: Key + Ord> Finalizer<'_, Ctx, S> {
-    fn node_ref(&self) -> Weak<RefCell<NodeInfo>> {
-        self.registrar.get_inner().node_ref()
+impl<Ctx: IsContext, S: Key + Ord> Finalizer<'_, Ctx, S> {
+    fn node_ref(&self) -> Ref<Rc<RefCell<NodeInfo>>> {
+        Ref::map(self.registrar.get_inner(), |x| &x.info)
+    }
+    fn dep(&self) -> Dep {
+        let node_info = self.node_ref();
+        node_info.borrow_mut().depth = Ctx::get_depth();
+        Dep {
+            context_id: self.parent.get_context_id(),
+            node_info: Rc::downgrade(&node_info),
+            node_maker: self.node_maker.clone(),
+        }
     }
 }
 
@@ -160,6 +170,7 @@ impl<'a, Ctx: IsContext, S: Key + Ord> SubContext<'a, Ctx, S> {
         Finalizer {
             parent: self.parent,
             registrar: self.registrar,
+            node_maker: self.node_maker,
         }
     }
 }
