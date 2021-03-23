@@ -1,8 +1,8 @@
-use super::Relation;
-use crate::core::operator::Op;
-use crate::core::Step;
-use std::cell::RefCell;
-use std::rc::{Rc, Weak};
+use crate::core::{operator::Op, Relation, Step};
+use std::{
+    cell::RefCell,
+    rc::{Rc, Weak},
+};
 
 #[derive(Clone)]
 pub(super) struct Node<C: ?Sized> {
@@ -27,6 +27,10 @@ impl<C: Op> Node<C> {
     pub(super) fn node_ref(&self) -> Weak<RefCell<NodeInfo>> {
         Rc::downgrade(&self.info)
     }
+    pub(super) fn as_registrar(self) -> Self {
+        self.info.borrow_mut().is_registrar = true;
+        self
+    }
 }
 
 type RelationId = usize;
@@ -39,6 +43,7 @@ pub(super) struct NodeInfo {
     pub(super) relation_id: RelationId,
     pub(super) deps: Vec<Weak<RefCell<NodeInfo>>>,
     pub(super) hideable: bool,
+    pub(super) is_registrar: bool,
 }
 
 impl NodeInfo {
@@ -91,6 +96,7 @@ impl NodeMaker {
             relation_id: infos.len(),
             deps,
             hideable: C::hideable(),
+            is_registrar: false,
         }));
         infos.push(Rc::clone(&info));
         Node { inner, info }

@@ -51,10 +51,11 @@ pub struct ExecutionContext {
 
 impl CreationContext {
     pub fn begin(self) -> ExecutionContext {
+        let infos: Vec<Rc<RefCell<NodeInfo>>> = mem::take(&mut self.node_maker.infos.borrow_mut());
         ExecutionContext {
             step: 0,
             context_id: self.context_id,
-            infos: mem::take(&mut self.node_maker.infos.borrow_mut()),
+            infos,
         }
     }
 }
@@ -87,11 +88,19 @@ impl ExecutionContext {
                 continue;
             }
             for dep in info.deps.iter() {
+                let dep_ptr = dep.upgrade().unwrap();
+                let dep_info = dep_ptr.borrow();
+                let label = if dep_info.is_registrar {
+                    " [style=dotted]"
+                } else {
+                    ""
+                };
                 writeln!(
                     file,
-                    "  node{} -> node{};",
-                    dep.upgrade().unwrap().borrow().shown_relation_id(),
-                    info.relation_id
+                    "  node{} -> node{}{};",
+                    dep_info.shown_relation_id(),
+                    info.relation_id,
+                    label
                 )?;
             }
         }

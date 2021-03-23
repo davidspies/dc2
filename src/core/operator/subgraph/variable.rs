@@ -36,14 +36,16 @@ impl<'a, Ctx: IsContext, S: Key + Ord> SubContext<'a, Ctx, S> {
         Variable<'a, S, D, R>,
         Relation<'a, impl Op<D = (S, D), R = R>>,
     ) {
-        let rc = Rc::new(RefCell::new(HashMap::new()));
+        let pending = Rc::new(RefCell::new(HashMap::new()));
         let new_node = self.node_maker.make_node(
             vec![self.registrar.get_inner().node_ref()],
-            SimpleInput(rc.clone()),
+            SimpleInput {
+                pending: Rc::clone(&pending),
+            },
         );
         (
             Variable {
-                inner: rc,
+                inner: pending,
                 context_id: self.context_id,
                 registrar: self.registrar.clone(),
                 phantom: PhantomData,

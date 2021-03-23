@@ -7,7 +7,9 @@ use std::collections::HashMap;
 use std::mem;
 use std::rc::Rc;
 
-pub(super) struct SimpleInput<D, R>(pub(super) Rc<RefCell<HashMap<D, R>>>);
+pub(super) struct SimpleInput<D, R> {
+    pub(super) pending: Rc<RefCell<HashMap<D, R>>>,
+}
 
 impl<D: Key, R: Monoid> Op for SimpleInput<D, R> {
     type D = D;
@@ -19,7 +21,7 @@ impl<D: Key, R: Monoid> Op for SimpleInput<D, R> {
         "variable"
     }
     fn flow<F: FnMut(Self::D, Self::R)>(&mut self, _step: &Step, mut send: F) {
-        for (x, r) in mem::take(&mut *self.0.borrow_mut()) {
+        for (x, r) in mem::take(&mut *self.pending.borrow_mut()) {
             send(x, r)
         }
     }
