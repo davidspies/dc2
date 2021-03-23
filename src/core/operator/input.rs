@@ -1,9 +1,9 @@
 use super::Op;
+use crate::core::is_map::IsAddMap;
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
-use crate::core::{is_map::IsAddMap, InputTrigger};
 use crate::core::{ContextId, CreationContext, ExecutionContext, Relation, Step};
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::mem;
@@ -17,7 +17,6 @@ struct InputInner<D, R> {
 
 pub struct Input<D, R = isize> {
     inner: Rc<RefCell<InputInner<D, R>>>,
-    trigger: Rc<Cell<usize>>,
     context_id: ContextId,
 }
 struct InputCollection<D, R>(Rc<RefCell<InputInner<D, R>>>);
@@ -34,7 +33,6 @@ impl<D, R> Clone for Input<D, R> {
     fn clone(&self) -> Self {
         Input {
             inner: Rc::clone(&self.inner),
-            trigger: Rc::clone(&self.trigger),
             context_id: self.context_id,
         }
     }
@@ -81,18 +79,15 @@ impl CreationContext {
             pending: HashMap::new(),
             adding: HashMap::new(),
         }));
-        let trigger = Rc::new(Cell::new(0));
         (
             Input {
                 inner: Rc::clone(&inner),
-                trigger: Rc::clone(&trigger),
                 context_id: self.context_id,
             },
             Relation {
                 inner: self
                     .node_maker
-                    .make_node(Vec::new(), InputCollection(inner))
-                    .set_trigger(InputTrigger(trigger)),
+                    .make_node(Vec::new(), InputCollection(inner)),
                 context_id: self.context_id,
                 depth: 0,
                 phantom: PhantomData,

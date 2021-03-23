@@ -47,13 +47,15 @@ impl<S: Key + Ord> Op for RegistrarInner<S> {
 impl<S: Key + Ord> Registrar<S> {
     pub(super) fn new_registrar(depth: usize, node_maker: &NodeMaker) -> Self {
         Receiver::new(
-            node_maker.make_node(
-                Vec::new(),
-                RegistrarInner {
-                    steppers: Vec::new(),
-                    inner_step: 0,
-                },
-            ),
+            node_maker
+                .make_node(
+                    Vec::new(),
+                    RegistrarInner {
+                        steppers: Vec::new(),
+                        inner_step: 0,
+                    },
+                )
+                .as_registrar(),
             depth,
         )
     }

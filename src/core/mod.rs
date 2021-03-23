@@ -12,11 +12,10 @@ pub use self::arrangement::Arrangement;
 use self::node::{Node, NodeInfo, NodeMaker};
 pub use self::operator::{subgraph, DynOp, Input, IsReduce, Op, Receiver, ReduceOutput};
 use std::{
-    cell::{Cell, RefCell},
-    hash::{Hash, Hasher},
+    cell::RefCell,
     io::{self, Write},
     marker::PhantomData,
-    mem, ptr,
+    mem,
     rc::{Rc, Weak},
     sync::atomic,
     sync::atomic::AtomicUsize,
@@ -53,9 +52,6 @@ pub struct ExecutionContext {
 impl CreationContext {
     pub fn begin(self) -> ExecutionContext {
         let infos: Vec<Rc<RefCell<NodeInfo>>> = mem::take(&mut self.node_maker.infos.borrow_mut());
-        for info in infos.iter() {
-            NodeInfo::determine_inputs(Rc::clone(info));
-        }
         ExecutionContext {
             step: 0,
             context_id: self.context_id,
@@ -92,11 +88,19 @@ impl ExecutionContext {
                 continue;
             }
             for dep in info.deps.iter() {
+                let dep_ptr = dep.upgrade().unwrap();
+                let dep_info = dep_ptr.borrow();
+                let label = if dep_info.is_registrar {
+                    " [style=dotted]"
+                } else {
+                    ""
+                };
                 writeln!(
                     file,
-                    "  node{} -> node{};",
-                    dep.upgrade().unwrap().borrow().shown_relation_id(),
-                    info.relation_id
+                    "  node{} -> node{}{};",
+                    dep_info.shown_relation_id(),
+                    info.relation_id,
+                    label
                 )?;
             }
         }
@@ -164,21 +168,6 @@ pub struct Relation<'a, C: ?Sized> {
     phantom: PhantomData<&'a ()>,
     node_maker: NodeMaker,
     inner: Node<C>,
-}
-
-#[derive(Clone)]
-struct InputTrigger(Rc<Cell<usize>>);
-
-impl PartialEq for InputTrigger {
-    fn eq(&self, other: &Self) -> bool {
-        ptr::eq(self.0.as_ptr(), other.0.as_ptr())
-    }
-}
-impl Eq for InputTrigger {}
-impl Hash for InputTrigger {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        ptr::hash(self.0.as_ptr(), state)
-    }
 }
 
 struct Dep {
