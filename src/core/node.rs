@@ -31,6 +31,10 @@ impl<C: Op> Node<C> {
         self.info.borrow_mut().is_registrar = true;
         self
     }
+    pub(super) fn with_depth(self, depth: usize) -> Self {
+        self.info.borrow_mut().depth = depth;
+        self
+    }
 }
 
 type RelationId = usize;
@@ -44,6 +48,7 @@ pub(super) struct NodeInfo {
     pub(super) deps: Vec<Weak<RefCell<NodeInfo>>>,
     pub(super) hideable: bool,
     pub(super) is_registrar: bool,
+    pub(super) depth: usize,
 }
 
 impl NodeInfo {
@@ -88,6 +93,11 @@ impl NodeMaker {
     }
     pub(super) fn make_node<C: Op>(&self, deps: Vec<Weak<RefCell<NodeInfo>>>, inner: C) -> Node<C> {
         let mut infos = self.infos.borrow_mut();
+        let depth = infos
+            .iter()
+            .map(|inf| inf.borrow().depth)
+            .max()
+            .unwrap_or(0);
         let info = Rc::new(RefCell::new(NodeInfo {
             message_count: 0,
             name: None,
@@ -97,6 +107,7 @@ impl NodeMaker {
             deps,
             hideable: C::hideable(),
             is_registrar: false,
+            depth,
         }));
         infos.push(Rc::clone(&info));
         Node { inner, info }

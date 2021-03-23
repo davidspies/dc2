@@ -55,7 +55,8 @@ impl<S: Key + Ord> Registrar<S> {
                         inner_step: 0,
                     },
                 )
-                .as_registrar(),
+                .as_registrar()
+                .with_depth(depth + 1),
             depth,
         )
     }

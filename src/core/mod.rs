@@ -68,6 +68,11 @@ impl ExecutionContext {
         writeln!(file, "digraph flow {{")?;
         for info_ref in self.infos.iter() {
             let info = info_ref.borrow();
+            let subgraph = if info.depth > 0 {
+                ",style=filled,fillcolor=lightblue"
+            } else {
+                ""
+            };
             if !info.shown {
                 continue;
             }
@@ -78,8 +83,8 @@ impl ExecutionContext {
             };
             writeln!(
                 file,
-                "  node{} [label = < {} {} <br/> {} >];",
-                info.relation_id, name, info.operator_name, info.message_count,
+                "  node{} [label=< {} {} <br/> {} >{}];",
+                info.relation_id, name, info.operator_name, info.message_count, subgraph
             )?;
         }
         for info_ref in self.infos.iter() {

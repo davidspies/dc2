@@ -35,15 +35,19 @@ impl<'b, C: Op> Relation<'b, C> {
             finalizer.parent.get_context_id(),
             "Context mismatch"
         );
+        let depth = Ctx::get_depth();
         Relation {
-            inner: self.node_maker.make_node(
-                vec![finalizer.node_ref(), self.node_ref()],
-                Leave {
-                    inner: self.inner,
-                    registrar: finalizer.registrar.clone(),
-                },
-            ),
-            depth: Ctx::get_depth(),
+            inner: self
+                .node_maker
+                .make_node(
+                    vec![finalizer.node_ref(), self.node_ref()],
+                    Leave {
+                        inner: self.inner,
+                        registrar: finalizer.registrar.clone(),
+                    },
+                )
+                .with_depth(depth),
+            depth,
             context_id: self.context_id,
             phantom: PhantomData,
             node_maker: self.node_maker,

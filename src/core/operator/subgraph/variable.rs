@@ -37,12 +37,16 @@ impl<'a, Ctx: IsContext, S: Key + Ord> SubContext<'a, Ctx, S> {
         Relation<'a, impl Op<D = (S, D), R = R>>,
     ) {
         let pending = Rc::new(RefCell::new(HashMap::new()));
-        let new_node = self.node_maker.make_node(
-            vec![self.registrar.get_inner().node_ref()],
-            SimpleInput {
-                pending: Rc::clone(&pending),
-            },
-        );
+        let depth = Self::get_depth();
+        let new_node = self
+            .node_maker
+            .make_node(
+                vec![self.registrar.get_inner().node_ref()],
+                SimpleInput {
+                    pending: Rc::clone(&pending),
+                },
+            )
+            .with_depth(depth);
         (
             Variable {
                 inner: pending,
@@ -54,7 +58,7 @@ impl<'a, Ctx: IsContext, S: Key + Ord> SubContext<'a, Ctx, S> {
             Relation {
                 inner: new_node,
                 context_id: self.context_id,
-                depth: Self::get_depth(),
+                depth,
                 phantom: PhantomData,
                 node_maker: self.node_maker.clone(),
             },
