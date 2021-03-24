@@ -25,7 +25,7 @@ impl<
     fn default_op_name() -> &'static str {
         "flat_map_dr"
     }
-    fn flow<F: FnMut(D2, R2)>(&mut self, step: &Step, mut send: F) {
+    fn flow<F: FnMut(D2, R2)>(&mut self, step: Step, mut send: F) {
         let FlatMap {
             ref mut inner,
             ref op,

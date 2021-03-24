@@ -49,9 +49,8 @@ impl<D: Key, R: Monoid> InputInner<D, R> {
     }
 }
 impl<D: Key, R: Monoid> InputInner<D, R> {
-    fn flow<F: FnMut(D, R)>(&mut self, step: &Step, mut send: F) {
-        let root_step = step.step_for(0).get_last();
-        self.resolve(root_step);
+    fn flow<F: FnMut(D, R)>(&mut self, step: Step, mut send: F) {
+        self.resolve(step);
         for (x, r) in mem::take(&mut self.pending) {
             send(x, r);
         }
@@ -65,7 +64,7 @@ impl<D: Key, R: Monoid> Op for InputCollection<D, R> {
     fn default_op_name() -> &'static str {
         "input"
     }
-    fn flow<F: FnMut(D, R)>(&mut self, step: &Step, send: F) {
+    fn flow<F: FnMut(D, R)>(&mut self, step: Step, send: F) {
         self.0.borrow_mut().flow(step, send)
     }
 }

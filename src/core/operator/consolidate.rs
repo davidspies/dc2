@@ -15,7 +15,7 @@ impl<C: Op> Op for Consolidate<C> {
     fn default_op_name() -> &'static str {
         "consolidate"
     }
-    fn flow<F: FnMut(C::D, C::R)>(&mut self, step: &Step, mut send: F) {
+    fn flow<F: FnMut(C::D, C::R)>(&mut self, step: Step, mut send: F) {
         let mut m = HashMap::new();
         self.inner.flow(step, |x, r| m.add(x, r));
         for (x, r) in m {

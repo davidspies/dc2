@@ -37,7 +37,7 @@ impl<
     fn default_op_name() -> &'static str {
         "reduce"
     }
-    fn flow<F: FnMut((K, D2), R2)>(&mut self, step: &Step, mut send: F) {
+    fn flow<F: FnMut((K, D2), R2)>(&mut self, step: Step, mut send: F) {
         let mut changed_keys = HashSet::new();
         let Reduce {
             inner, input_maps, ..
@@ -145,7 +145,6 @@ impl<C: IsReduce + Op> Relation<'static, C> {
         impl ReduceOutput<K = C::K, M = C::M>,
     ) {
         assert_eq!(self.context_id, context.context_id, "Context mismatch");
-        assert_eq!(self.depth(), 0);
         let context_id = self.context_id;
         let r = self.split();
         let inner = r.inner.inner.get_source_ref();
@@ -153,7 +152,6 @@ impl<C: IsReduce + Op> Relation<'static, C> {
     }
     pub fn reduce_output(self, context: &CreationContext) -> impl ReduceOutput<K = C::K, M = C::M> {
         assert_eq!(self.context_id, context.context_id, "Context mismatch");
-        assert_eq!(self.depth(), 0);
         let context_id = self.context_id;
         let r = self.barrier();
         ReduceOutputImpl {
@@ -179,7 +177,7 @@ impl<C: IsReduce + Op> ReduceOutput for SplitReduceOutputImpl<C> {
 
     fn read<'a>(&'a self, context: &'a ExecutionContext) -> Ref<'a, HashMap<C::K, C::M>> {
         assert_eq!(self.context_id, context.context_id, "Context mismatch");
-        self.inner.propagate(&Step::Root(context.step));
+        self.inner.propagate(context.step);
         Ref::map(self.inner.get_inner(), |n| IsReduce::get_ref(&n.inner))
     }
 }
@@ -190,10 +188,8 @@ impl<C: IsReduce + Op> ReduceOutput for ReduceOutputImpl<C> {
 
     fn read<'a>(&'a self, context: &'a ExecutionContext) -> Ref<'a, HashMap<C::K, C::M>> {
         assert_eq!(self.context_id, context.context_id, "Context mismatch");
-        if self.inner.borrow().inner.dirty(&Step::Root(context.step)) {
-            self.inner
-                .borrow_mut()
-                .flow(&Step::Root(context.step), |_, _| ());
+        if self.inner.borrow().inner.dirty(context.step) {
+            self.inner.borrow_mut().flow(context.step, |_, _| ());
         }
         Ref::map(self.inner.borrow(), |n| n.inner.inner.inner.get_ref())
     }

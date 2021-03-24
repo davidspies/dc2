@@ -1,4 +1,4 @@
-use super::{ContextId, CreationContext, ExecutionContext, Relation, Step};
+use super::{ContextId, CreationContext, ExecutionContext, Relation};
 use crate::core::is_map::IsAddMap;
 use crate::core::node::Node;
 use crate::core::operator::{DynOp, Op};
@@ -38,7 +38,7 @@ impl<C: Op, M: IsAddMap<C::D, C::R>> ArrangementInner<C::D, C::R, M, C> {
         } = self;
         if *cur_step < step {
             *cur_step = step;
-            from.flow(&Step::Root(step), |x, r| value.add(x, r));
+            from.flow(step, |x, r| value.add(x, r));
         }
     }
 }

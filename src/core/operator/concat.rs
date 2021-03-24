@@ -16,7 +16,7 @@ impl<D: Key, R: Monoid, C1: Op<D = D, R = R>, C2: Op<D = D, R = R>> Op for Conca
     fn default_op_name() -> &'static str {
         "concat"
     }
-    fn flow<F: FnMut(D, R)>(&mut self, step: &Step, mut send: F) {
+    fn flow<F: FnMut(D, R)>(&mut self, step: Step, mut send: F) {
         self.left.flow(step, &mut send);
         self.right.flow(step, send);
     }

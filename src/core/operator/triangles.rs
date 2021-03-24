@@ -29,7 +29,7 @@ impl<A: Key, B: Key, C: Op<D = (A, B)>> BiMap<A, B, C>
 where
     C::R: Mul<C::R, Output = C::R>,
 {
-    fn flow<F: FnMut((A, B), C::R)>(&mut self, step: &Step, mut send: F) {
+    fn flow<F: FnMut((A, B), C::R)>(&mut self, step: Step, mut send: F) {
         let BiMap {
             forward,
             backward,
@@ -73,7 +73,7 @@ impl<
     fn default_op_name() -> &'static str {
         "triangles"
     }
-    fn flow<F: FnMut((X, Y, Z), R)>(&mut self, step: &Step, mut send: F) {
+    fn flow<F: FnMut((X, Y, Z), R)>(&mut self, step: Step, mut send: F) {
         let Triangles { mxy, mxz, myz } = self;
         mxy.flow(step, |(x, y), rxy| {
             for (z, (rxz, ryz)) in intersection(

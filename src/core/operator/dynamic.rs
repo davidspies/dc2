@@ -10,13 +10,13 @@ pub struct DynOp<D, R = isize>(Box<dyn DynOpT<D = D, R = R>>);
 trait DynOpT: 'static {
     type D: Key;
     type R: Monoid;
-    fn flow_dyn(&mut self, step: &Step, send: &mut dyn FnMut(Self::D, Self::R));
+    fn flow_dyn(&mut self, step: Step, send: &mut dyn FnMut(Self::D, Self::R));
 }
 
 impl<T: Op> DynOpT for Node<T> {
     type D = <T as Op>::D;
     type R = <T as Op>::R;
-    fn flow_dyn(&mut self, step: &Step, send: &mut dyn FnMut(Self::D, Self::R)) {
+    fn flow_dyn(&mut self, step: Step, send: &mut dyn FnMut(Self::D, Self::R)) {
         self.flow(step, send)
     }
 }
@@ -27,7 +27,7 @@ impl<D: Key, R: Monoid> Op for DynOp<D, R> {
     fn default_op_name() -> &'static str {
         "dynamic"
     }
-    fn flow<F: FnMut(D, R)>(&mut self, step: &Step, mut send: F) {
+    fn flow<F: FnMut(D, R)>(&mut self, step: Step, mut send: F) {
         self.0.flow_dyn(step, &mut send)
     }
 }

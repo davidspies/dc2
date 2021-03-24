@@ -4,7 +4,7 @@ use crate::core::is_map::IsAddMap;
 use crate::core::iter::TupleableWith;
 use crate::core::node::Node;
 use crate::core::{Relation, Step};
-use std::cell::{Ref, RefCell, RefMut};
+use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
 use std::mem;
 use std::rc::Rc;
@@ -20,10 +20,7 @@ impl<C: Op> SourceRef<C> {
     pub(super) fn get_inner(&self) -> Ref<Node<C>> {
         Ref::map(self.0.borrow(), |r| &r.inner.inner)
     }
-    pub(super) fn get_inner_mut(&self) -> RefMut<Node<C>> {
-        RefMut::map(self.0.borrow_mut(), |r| &mut r.inner.inner)
-    }
-    pub(super) fn propagate(&self, step: &Step) {
+    pub(super) fn propagate(&self, step: Step) {
         if self.0.borrow().inner.dirty(step) {
             let mut source = self.0.borrow_mut();
             let Source {
@@ -57,12 +54,6 @@ impl<C: Op> Receiver<C> {
         })));
         Receiver { data, source }
     }
-    pub(super) fn get_inner(&self) -> Ref<Node<C>> {
-        self.source.get_inner()
-    }
-    pub(super) fn get_inner_mut(&self) -> RefMut<Node<C>> {
-        self.source.get_inner_mut()
-    }
     pub(super) fn get_source_ref(&self) -> SourceRef<C> {
         self.source.clone()
     }
@@ -92,7 +83,7 @@ impl<C: Op> Op for Receiver<C> {
     fn default_op_name() -> &'static str {
         "split"
     }
-    fn flow<F: FnMut(C::D, C::R)>(&mut self, step: &Step, mut send: F) {
+    fn flow<F: FnMut(C::D, C::R)>(&mut self, step: Step, mut send: F) {
         self.source.propagate(step);
         for (x, r) in mem::take(&mut *self.data.borrow_mut()) {
             send(x, r)

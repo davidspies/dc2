@@ -10,13 +10,13 @@ mod operator;
 
 pub use self::arrangement::Arrangement;
 use self::node::{Node, NodeInfo, NodeMaker};
-pub use self::operator::{subgraph, DynOp, Input, IsReduce, Op, Receiver, ReduceOutput};
+pub use self::operator::{DynOp, Input, IsReduce, Op, Receiver, ReduceOutput};
 use std::{
     cell::RefCell,
     io::{self, Write},
     marker::PhantomData,
     mem,
-    rc::{Rc, Weak},
+    rc::Rc,
     sync::atomic,
     sync::atomic::AtomicUsize,
 };
@@ -68,11 +68,6 @@ impl ExecutionContext {
         writeln!(file, "digraph flow {{")?;
         for info_ref in self.infos.iter() {
             let info = info_ref.borrow();
-            let subgraph = if info.depth > 0 {
-                ",style=filled,fillcolor=lightblue"
-            } else {
-                ""
-            };
             if !info.shown {
                 continue;
             }
@@ -83,8 +78,8 @@ impl ExecutionContext {
             };
             writeln!(
                 file,
-                "  node{} [label=< {} {} <br/> {} >{}];",
-                info.relation_id, name, info.operator_name, info.message_count, subgraph
+                "  node{} [label=< {} {} <br/> {} >];",
+                info.relation_id, name, info.operator_name, info.message_count
             )?;
         }
         for info_ref in self.infos.iter() {
@@ -93,19 +88,12 @@ impl ExecutionContext {
                 continue;
             }
             for dep in info.deps.iter() {
-                let dep_ptr = dep.upgrade().unwrap();
-                let dep_info = dep_ptr.borrow();
-                let label = if dep_info.is_registrar {
-                    " [style=dotted]"
-                } else {
-                    ""
-                };
+                let dep_info = dep.borrow();
                 writeln!(
                     file,
-                    "  node{} -> node{}{};",
+                    "  node{} -> node{};",
                     dep_info.shown_relation_id(),
                     info.relation_id,
-                    label
                 )?;
             }
         }
@@ -113,58 +101,7 @@ impl ExecutionContext {
     }
 }
 
-pub struct Sub<'a> {
-    pub depth: usize,
-    pub step: usize,
-    pub parent: &'a Step<'a>,
-}
-
-pub enum Step<'a> {
-    Root(usize),
-    Sub(Sub<'a>),
-}
-
-impl<'a> Step<'a> {
-    fn get_last(&self) -> usize {
-        match self {
-            &Step::Root(s) => s,
-            &Step::Sub(Sub { step, .. }) => step,
-        }
-    }
-    fn step_for(&self, depth: usize) -> &Step {
-        match self {
-            &Self::Root(_) => {
-                assert_eq!(depth, 0);
-                self
-            }
-            &Self::Sub(Sub {
-                depth: my_depth,
-                step: _,
-                ref parent,
-            }) => {
-                if my_depth == depth {
-                    self
-                } else {
-                    assert!(depth < my_depth);
-                    parent.step_for(depth)
-                }
-            }
-        }
-    }
-    fn get_depth(&self) -> usize {
-        match self {
-            &Self::Root(_) => 0,
-            &Self::Sub(Sub { depth, .. }) => depth,
-        }
-    }
-    fn append(&'a self, step: usize) -> Step<'a> {
-        Self::Sub(Sub {
-            depth: self.get_depth() + 1,
-            step,
-            parent: self,
-        })
-    }
-}
+type Step = usize;
 
 #[derive(Clone)]
 pub struct Relation<'a, C: ?Sized> {
@@ -176,7 +113,7 @@ pub struct Relation<'a, C: ?Sized> {
 
 struct Dep {
     context_id: usize,
-    node_info: Weak<RefCell<NodeInfo>>,
+    node_info: Rc<RefCell<NodeInfo>>,
     node_maker: NodeMaker,
 }
 
@@ -197,7 +134,7 @@ impl<'a, C: Op> Relation<'a, C> {
     fn dep(&self) -> Dep {
         Dep {
             context_id: self.context_id,
-            node_info: self.node_ref(),
+            node_info: Rc::clone(self.node_ref()),
             node_maker: self.node_maker.clone(),
         }
     }
@@ -227,12 +164,5 @@ impl<'a, C: Op> Relation<'a, C> {
     fn set_shown(self, shown: bool) -> Self {
         self.inner.info.borrow_mut().shown = shown;
         self
-    }
-    fn with_depth(self, depth: usize) -> Self {
-        self.inner.info.borrow_mut().depth = depth;
-        self
-    }
-    fn depth(&self) -> usize {
-        self.inner.info.borrow().depth
     }
 }

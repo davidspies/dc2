@@ -7,7 +7,6 @@ mod join;
 mod map;
 mod reduce;
 mod split;
-pub mod subgraph;
 mod triangles;
 
 pub use self::dynamic::DynOp;
@@ -25,5 +24,5 @@ pub trait Op: 'static {
         true
     }
     fn default_op_name() -> &'static str;
-    fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: &Step, send: F);
+    fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: Step, send: F);
 }

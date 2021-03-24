@@ -32,7 +32,7 @@ impl<
     fn default_op_name() -> &'static str {
         "join"
     }
-    fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: &Step, mut send: F) {
+    fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: Step, mut send: F) {
         let Join {
             left,
             right,
@@ -82,7 +82,7 @@ impl<
     fn default_op_name() -> &'static str {
         "antijoin"
     }
-    fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: &Step, mut send: F) {
+    fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: Step, mut send: F) {
         let AntiJoin {
             left,
             right,
