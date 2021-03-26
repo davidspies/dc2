@@ -23,7 +23,14 @@ impl<C: Op> Op for Barrier<C> {
         "barrier"
     }
     fn flow<F: FnMut(Self::D, Self::R)>(&mut self, step: Step, send: F) {
-        if self.step < step {
+        if self
+            .inner
+            .info
+            .borrow()
+            .inputs
+            .iter()
+            .any(|inp| self.step <= inp.latest_update(step))
+        {
             self.step = step;
             self.inner.flow(step, send);
         }
