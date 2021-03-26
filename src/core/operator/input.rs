@@ -3,18 +3,52 @@ use crate::core::is_map::IsAddMap;
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
 use crate::core::{ContextId, CreationContext, ExecutionContext, Relation, Step};
-use std::cell::RefCell;
 use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::mem;
 use std::rc::Rc;
+use std::{cell::RefCell, ptr};
 
 struct InputInner<D, R> {
-    step: usize,
+    pending_step: usize,
+    adding_step: usize,
     pending: HashMap<D, R>,
     adding: HashMap<D, R>,
 }
 
+trait IsInput {
+    fn latest_update(&mut self, step: Step) -> Step;
+}
+
+impl<D: Key, R: Monoid> IsInput for InputInner<D, R> {
+    fn latest_update(&mut self, step: Step) -> Step {
+        self.resolve(step);
+        self.pending_step
+    }
+}
+
+#[derive(Clone)]
+pub(in crate::core) struct InputRef(Rc<RefCell<dyn IsInput>>);
+impl PartialEq for InputRef {
+    fn eq(&self, other: &Self) -> bool {
+        ptr::eq(self.0.as_ptr(), other.0.as_ptr())
+    }
+}
+impl Eq for InputRef {}
+impl Hash for InputRef {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        ptr::hash(self.0.as_ptr(), state)
+    }
+}
+
+impl InputRef {
+    pub(in crate::core) fn latest_update(&self, step: Step) -> Step {
+        self.0.borrow_mut().latest_update(step)
+    }
+}
+
+#[derive(Clone)]
 pub struct Input<D, R = isize> {
     inner: Rc<RefCell<InputInner<D, R>>>,
     context_id: ContextId,
@@ -29,22 +63,17 @@ impl<D: Key, R: Monoid> Input<D, R> {
         inner_mut.adding.add(x, r);
     }
 }
-impl<D, R> Clone for Input<D, R> {
-    fn clone(&self) -> Self {
-        Input {
-            inner: Rc::clone(&self.inner),
-            context_id: self.context_id,
-        }
-    }
-}
 impl<D: Key, R: Monoid> InputInner<D, R> {
     fn resolve(&mut self, step: usize) {
-        assert!(self.step <= step);
-        if self.step < step {
-            for (x, r) in mem::take(&mut self.adding) {
-                self.pending.add(x, r);
+        assert!(self.adding_step <= step);
+        if self.adding_step < step {
+            if !self.adding.is_empty() {
+                self.pending_step = self.adding_step;
+                for (x, r) in mem::take(&mut self.adding) {
+                    self.pending.add(x, r);
+                }
             }
-            self.step = step;
+            self.adding_step = step;
         }
     }
 }
@@ -74,7 +103,8 @@ impl CreationContext {
         &self,
     ) -> (Input<D, R>, Relation<'static, impl Op<D = D, R = R>>) {
         let inner = Rc::new(RefCell::new(InputInner {
-            step: 0,
+            pending_step: 0,
+            adding_step: 0,
             pending: HashMap::new(),
             adding: HashMap::new(),
         }));
@@ -86,11 +116,12 @@ impl CreationContext {
             Relation {
                 inner: self
                     .node_maker
-                    .make_node(Vec::new(), InputCollection(inner)),
+                    .make_node(Vec::new(), InputCollection(Rc::clone(&inner))),
                 context_id: self.context_id,
                 phantom: PhantomData,
                 node_maker: self.node_maker.clone(),
-            },
+            }
+            .with_input(InputRef(inner)),
         )
     }
 }

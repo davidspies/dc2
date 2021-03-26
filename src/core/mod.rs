@@ -9,8 +9,11 @@ mod node;
 mod operator;
 
 pub use self::arrangement::Arrangement;
-use self::node::{Node, NodeInfo, NodeMaker};
 pub use self::operator::{DynOp, Input, IsReduce, Op, Receiver, ReduceOutput};
+use self::{
+    node::{Node, NodeInfo, NodeMaker},
+    operator::InputRef,
+};
 use std::{
     cell::RefCell,
     io::{self, Write},
@@ -163,6 +166,10 @@ impl<'a, C: Op> Relation<'a, C> {
     }
     fn set_shown(self, shown: bool) -> Self {
         self.inner.info.borrow_mut().shown = shown;
+        self
+    }
+    fn with_input(self, input: InputRef) -> Self {
+        self.inner.info.borrow_mut().inputs.insert(input);
         self
     }
 }

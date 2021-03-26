@@ -1,4 +1,8 @@
-use crate::core::{operator::Op, Relation, Step};
+use crate::core::{
+    operator::{InputRef, Op},
+    Relation, Step,
+};
+use std::collections::HashSet;
 use std::{cell::RefCell, rc::Rc};
 
 #[derive(Clone)]
@@ -33,6 +37,7 @@ pub(super) struct NodeInfo {
     pub(super) relation_id: RelationId,
     pub(super) deps: Vec<Rc<RefCell<NodeInfo>>>,
     pub(super) hideable: bool,
+    pub(super) inputs: HashSet<InputRef>,
 }
 
 impl NodeInfo {
@@ -73,6 +78,10 @@ impl NodeMaker {
     }
     pub(super) fn make_node<C: Op>(&self, deps: Vec<Rc<RefCell<NodeInfo>>>, inner: C) -> Node<C> {
         let mut infos = self.infos.borrow_mut();
+        let inputs = deps
+            .iter()
+            .flat_map(|inf| inf.borrow().inputs.clone())
+            .collect();
         let info = Rc::new(RefCell::new(NodeInfo {
             message_count: 0,
             name: None,
@@ -81,6 +90,7 @@ impl NodeMaker {
             relation_id: infos.len(),
             deps,
             hideable: C::hideable(),
+            inputs,
         }));
         infos.push(Rc::clone(&info));
         Node { inner, info }

@@ -1,3 +1,4 @@
+#![feature(coerce_unsized)]
 #![feature(map_first_last)]
 #![feature(type_alias_impl_trait)]
 
