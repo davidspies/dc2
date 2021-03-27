@@ -4,6 +4,7 @@
 
 mod convenience_operators;
 mod core;
+pub mod feedback;
 pub mod map;
 mod tuple;
 

@@ -4,6 +4,7 @@ use crate::core::node::Node;
 use crate::core::operator::{DynOp, Op};
 use std::cell::{Ref, RefCell};
 use std::collections::HashMap;
+use std::rc::Rc;
 
 pub struct Arrangement<
     D,
@@ -11,8 +12,17 @@ pub struct Arrangement<
     M: IsAddMap<D, R> = HashMap<D, R>,
     C: Op<D = D, R = R> = DynOp<D, R>,
 > {
-    inner: RefCell<ArrangementInner<D, R, M, C>>,
+    inner: Rc<RefCell<ArrangementInner<D, R, M, C>>>,
     context_id: ContextId,
+}
+
+impl<M: IsAddMap<C::D, C::R>, C: Op> Clone for Arrangement<C::D, C::R, M, C> {
+    fn clone(&self) -> Self {
+        Arrangement {
+            inner: Rc::clone(&self.inner),
+            context_id: self.context_id,
+        }
+    }
 }
 
 impl<C: Op, M: IsAddMap<C::D, C::R>> Arrangement<C::D, C::R, M, C> {
@@ -50,11 +60,11 @@ impl<C: Op> Relation<C> {
     ) -> Arrangement<C::D, C::R, M, C> {
         assert_eq!(self.context_id, context.context_id, "Context mismatch");
         Arrangement {
-            inner: RefCell::new(ArrangementInner {
+            inner: Rc::new(RefCell::new(ArrangementInner {
                 from: self.inner,
                 step: 0,
                 value: Default::default(),
-            }),
+            })),
             context_id: self.context_id,
         }
     }
