@@ -17,7 +17,6 @@ use self::{
 use std::{
     cell::RefCell,
     io::{self, Write},
-    marker::PhantomData,
     mem,
     rc::Rc,
     sync::atomic,
@@ -107,9 +106,8 @@ impl ExecutionContext {
 type Step = usize;
 
 #[derive(Clone)]
-pub struct Relation<'a, C: ?Sized> {
+pub struct Relation<C: ?Sized> {
     context_id: ContextId,
-    phantom: PhantomData<&'a ()>,
     node_maker: NodeMaker,
     inner: Node<C>,
 }
@@ -120,7 +118,7 @@ struct Dep {
     node_maker: NodeMaker,
 }
 
-impl<'a, C: Op> Relation<'a, C> {
+impl<C: Op> Relation<C> {
     fn new(deps: Vec<Dep>, inner: C) -> Self {
         let context_id = deps[0].context_id;
         for dep in &deps[1..] {
@@ -130,7 +128,6 @@ impl<'a, C: Op> Relation<'a, C> {
         Relation {
             inner: node_maker.make_node(deps.into_iter().map(|x| x.node_info).collect(), inner),
             context_id,
-            phantom: PhantomData,
             node_maker,
         }
     }

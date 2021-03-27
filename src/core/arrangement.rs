@@ -30,7 +30,7 @@ struct ArrangementInner<D, R, M: IsAddMap<D, R>, C: Op<D = D, R = R>> {
 }
 
 impl<C: Op, M: IsAddMap<C::D, C::R>> ArrangementInner<C::D, C::R, M, C> {
-    fn flow<'a>(&'a mut self, step: usize) {
+    fn flow(&mut self, step: usize) {
         let ArrangementInner {
             ref mut from,
             ref mut value,
@@ -43,7 +43,7 @@ impl<C: Op, M: IsAddMap<C::D, C::R>> ArrangementInner<C::D, C::R, M, C> {
     }
 }
 
-impl<C: Op> Relation<'static, C> {
+impl<C: Op> Relation<C> {
     pub fn get_arrangement<M: IsAddMap<C::D, C::R>>(
         self,
         context: &CreationContext,

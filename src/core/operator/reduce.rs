@@ -88,7 +88,7 @@ impl<
     }
 }
 
-impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
+impl<K: Key, D: Key, C: Op<D = (K, D)>> Relation<C> {
     pub fn reduce<
         D2: Key,
         R2: Monoid,
@@ -98,7 +98,7 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
     >(
         self,
         proc: MF,
-    ) -> Relation<'a, impl IsReduce<K = K, M = M2> + Op<D = (K, D2), R = R2>> {
+    ) -> Relation<impl IsReduce<K = K, M = M2> + Op<D = (K, D2), R = R2>> {
         Relation::new(
             vec![self.dep()],
             Reduce {
@@ -136,14 +136,11 @@ impl<
     }
 }
 
-impl<C: IsReduce + Op> Relation<'static, C> {
+impl<C: IsReduce + Op> Relation<C> {
     pub fn split_reduce_output(
         self,
         context: &CreationContext,
-    ) -> (
-        Relation<'static, Receiver<C>>,
-        impl ReduceOutput<K = C::K, M = C::M>,
-    ) {
+    ) -> (Relation<Receiver<C>>, impl ReduceOutput<K = C::K, M = C::M>) {
         assert_eq!(self.context_id, context.context_id, "Context mismatch");
         let context_id = self.context_id;
         let r = self.split();

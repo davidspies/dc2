@@ -13,64 +13,59 @@ use std::iter;
 use std::ops::Neg;
 
 pub type DynReceiver<D, R = isize> = Receiver<DynOp<D, R>>;
-pub type Collection<'a, D, R = isize> = Relation<'a, DynReceiver<D, R>>;
+pub type Collection<D, R = isize> = Relation<DynReceiver<D, R>>;
 pub type MapMapArrangement<K, V, R = isize> = Arrangement<(K, V), R, HashMap<K, HashMap<V, R>>>;
 pub type OrderedArrangement<K, V, R = isize> = Arrangement<(K, V), R, BTreeMap<K, HashMap<V, R>>>;
 pub type MappingArrangement<K, V> = Box<dyn ReduceOutput<K = K, M = SingletonMap<V>>>;
 
-impl<'a, C: Op> Relation<'a, C> {
+impl<C: Op> Relation<C> {
     pub fn get_dyn_arrangement(self, context: &CreationContext) -> Arrangement<C::D, C::R>
-    where
-        'a: 'static,
-    {
+where {
         self.dynamic().get_arrangement(context)
     }
     /// Convenience function equivalent to `self.dynamic().split()`.
-    pub fn collect(self) -> Collection<'a, C::D, C::R> {
+    pub fn collect(self) -> Collection<C::D, C::R> {
         self.dynamic().split()
     }
     pub fn flat_map<F: Fn(C::D) -> I + 'static, D2: Key, I: IntoIterator<Item = D2>>(
         self,
         f: F,
-    ) -> Relation<'a, impl Op<D = D2, R = C::R>> {
+    ) -> Relation<impl Op<D = D2, R = C::R>> {
         self.flat_map_dr(move |x, r| f(x).into_iter().tuple_with(r))
             .op_named("flat_map")
     }
     pub fn map<F: Fn(C::D) -> D2 + 'static, D2: Key>(
         self,
         f: F,
-    ) -> Relation<'a, impl Op<D = D2, R = C::R>> {
+    ) -> Relation<impl Op<D = D2, R = C::R>> {
         self.flat_map(move |x| iter::once(f(x))).op_named("map")
     }
     pub fn hmap<F: Fn(C::D) -> D2 + 'static, D2: Key>(
         self,
         f: F,
-    ) -> Relation<'a, impl Op<D = D2, R = C::R>> {
+    ) -> Relation<impl Op<D = D2, R = C::R>> {
         self.map(f).hidden()
     }
     pub fn filter<F: Fn(&C::D) -> bool + 'static>(
         self,
         f: F,
-    ) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
+    ) -> Relation<impl Op<D = C::D, R = C::R>> {
         self.flat_map(move |x| if f(&x) { Some(x) } else { None })
             .op_named("filter")
     }
     pub fn map_r<F: Fn(C::R) -> R2 + 'static, R2: Monoid>(
         self,
         f: F,
-    ) -> Relation<'a, impl Op<D = C::D, R = R2>> {
+    ) -> Relation<impl Op<D = C::D, R = R2>> {
         self.flat_map_dr(move |x, r| iter::once((x, f(r))))
             .op_named("map_r")
     }
-    pub fn negate(self) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
+    pub fn negate(self) -> Relation<impl Op<D = C::D, R = C::R>> {
         self.map_r(Neg::neg).op_named("negate")
     }
     pub fn counts(
         self,
-    ) -> Relation<
-        'a,
-        impl Op<D = (C::D, C::R), R = isize> + IsReduce<K = C::D, M = SingletonMap<C::R>>,
-    >
+    ) -> Relation<impl Op<D = (C::D, C::R), R = isize> + IsReduce<K = C::D, M = SingletonMap<C::R>>>
     where
         C::R: Key,
     {
@@ -78,7 +73,7 @@ impl<'a, C: Op> Relation<'a, C> {
             .reduce(|_, xs: &UnitMap<C::R>| SingletonMap(xs.0.clone()))
             .op_named("counts")
     }
-    pub fn distinct(self) -> Relation<'a, impl Op<D = C::D, R = isize>> {
+    pub fn distinct(self) -> Relation<impl Op<D = C::D, R = isize>> {
         self.hmap(|x| (x, ()))
             .reduce(|_, _: &UnitMap<C::R>| UnitMap(1))
             .op_named("distinct")
@@ -86,25 +81,25 @@ impl<'a, C: Op> Relation<'a, C> {
     }
 }
 
-impl<'a, C: Op<R = isize>> Relation<'a, C> {
+impl<C: Op<R = isize>> Relation<C> {
     pub fn hist_including<C2: Op<D = C::D, R = isize>>(
         self,
-        keys: Relation<'a, C2>,
-    ) -> Relation<'a, impl Op<D = (C::D, isize), R = isize>> {
+        keys: Relation<C2>,
+    ) -> Relation<impl Op<D = (C::D, isize), R = isize>> {
         self.concat(keys).counts().hmap(|(k, v)| (k, v - 1))
     }
     pub fn histogram<C2: Clone + Op<D = C::D, R = isize>>(
         self,
-        keys: Relation<'a, C2>,
-    ) -> Relation<'a, impl Op<D = (C::D, isize), R = isize>> {
+        keys: Relation<C2>,
+    ) -> Relation<impl Op<D = (C::D, isize), R = isize>> {
         self.intersection(keys.clone()).hist_including(keys)
     }
 }
 
-impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
+impl<K: Key, V: Key, C: Op<D = (K, V)>> Relation<C> {
     pub fn group_min(
         self,
-    ) -> Relation<'a, impl Op<D = C::D, R = isize> + IsReduce<K = K, M = SingletonMap<V>>>
+    ) -> Relation<impl Op<D = C::D, R = isize> + IsReduce<K = K, M = SingletonMap<V>>>
     where
         V: Ord,
     {
@@ -115,7 +110,7 @@ impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
     }
     pub fn group_max(
         self,
-    ) -> Relation<'a, impl Op<D = C::D, R = isize> + IsReduce<K = K, M = SingletonMap<V>>>
+    ) -> Relation<impl Op<D = C::D, R = isize> + IsReduce<K = K, M = SingletonMap<V>>>
     where
         V: Ord,
     {
@@ -126,12 +121,12 @@ impl<'a, K: Key, V: Key, C: Op<D = (K, V)>> Relation<'a, C> {
     }
 }
 
-impl<K: Key, V: Key, C: Op<D = (K, V), R = isize>> Relation<'static, C> {
+impl<K: Key, V: Key, C: Op<D = (K, V), R = isize>> Relation<C> {
     pub fn assert_1to1_with_output(
         self,
         context: &CreationContext,
     ) -> (
-        Relation<'static, impl Op<D = C::D, R = isize>>,
+        Relation<impl Op<D = C::D, R = isize>>,
         impl ReduceOutput<K = K, M = SingletonMap<V>>,
     ) {
         self.reduce(|_, m: &HashMap<V, C::R>| {

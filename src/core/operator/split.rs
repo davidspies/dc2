@@ -91,9 +91,9 @@ impl<C: Op> Op for Receiver<C> {
     }
 }
 
-impl<'a, C: Op> Relation<'a, C> {
+impl<C: Op> Relation<C> {
     /// Produces a version of this relation which can be cloned to use in multiple places.
-    pub fn split(self) -> Relation<'a, Receiver<C>> {
+    pub fn split(self) -> Relation<Receiver<C>> {
         Relation::new(vec![self.dep()], Receiver::new(self.inner)).hidden()
     }
 }

@@ -138,15 +138,13 @@ fn intersection<K: Clone + Eq + Hash, V1: Clone, V2: Clone>(
     }
 }
 
-impl<'a, X: Key, Y: Key, R: Monoid + Mul<R, Output = R>, C1: Op<D = (X, Y), R = R>>
-    Relation<'a, C1>
-{
+impl<X: Key, Y: Key, R: Monoid + Mul<R, Output = R>, C1: Op<D = (X, Y), R = R>> Relation<C1> {
     /// Find all triangles in a tri-partite graph
     pub fn triangles<Z: Key, C2: Op<D = (X, Z), R = R>, C3: Op<D = (Y, Z), R = R>>(
         self,
-        r2: Relation<'a, C2>,
-        r3: Relation<'a, C3>,
-    ) -> Relation<'a, impl Op<D = (X, Y, Z), R = R>> {
+        r2: Relation<C2>,
+        r3: Relation<C3>,
+    ) -> Relation<impl Op<D = (X, Y, Z), R = R>> {
         Relation::new(
             vec![self.dep(), r2.dep(), r3.dep()],
             Triangles {

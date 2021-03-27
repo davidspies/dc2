@@ -110,11 +110,11 @@ impl<
     }
 }
 
-impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
+impl<K: Key, D: Key, C: Op<D = (K, D)>> Relation<C> {
     pub fn join<C2: Op<D = (K, D2)>, D2: Key, OR: Monoid>(
         self,
-        other: Relation<'a, C2>,
-    ) -> Relation<'a, impl Op<D = (K, (D, D2)), R = OR>>
+        other: Relation<C2>,
+    ) -> Relation<impl Op<D = (K, (D, D2)), R = OR>>
     where
         C::R: Mul<C2::R, Output = OR>,
     {
@@ -130,8 +130,8 @@ impl<'a, K: Key, D: Key, C: Op<D = (K, D)>> Relation<'a, C> {
     }
     pub fn antijoin<C2: Op<D = K>>(
         self,
-        other: Relation<'a, C2>,
-    ) -> Relation<'a, impl Op<D = (K, D), R = C::R>> {
+        other: Relation<C2>,
+    ) -> Relation<impl Op<D = (K, D), R = C::R>> {
         Relation::new(
             vec![self.dep(), other.dep()],
             AntiJoin {

@@ -24,8 +24,8 @@ impl<C: Op> Op for Consolidate<C> {
     }
 }
 
-impl<'a, C: Op> Relation<'a, C> {
-    pub fn consolidate(self) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
+impl<C: Op> Relation<C> {
+    pub fn consolidate(self) -> Relation<impl Op<D = C::D, R = C::R>> {
         Relation::new(vec![self.dep()], Consolidate { inner: self.inner })
     }
 }

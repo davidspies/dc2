@@ -97,7 +97,7 @@ impl NodeMaker {
     }
 }
 
-impl<C: ?Sized> Relation<'_, C> {
+impl<C: ?Sized> Relation<C> {
     pub(super) fn node_ref(&self) -> &Rc<RefCell<NodeInfo>> {
         &self.inner.info
     }

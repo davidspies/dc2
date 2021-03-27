@@ -22,11 +22,11 @@ impl<D: Key, R: Monoid, C1: Op<D = D, R = R>, C2: Op<D = D, R = R>> Op for Conca
     }
 }
 
-impl<'a, C: Op> Relation<'a, C> {
+impl<C: Op> Relation<C> {
     pub fn concat<C2: Op<D = C::D, R = C::R>>(
         self,
         other: Relation<C2>,
-    ) -> Relation<'a, impl Op<D = C::D, R = C::R>> {
+    ) -> Relation<impl Op<D = C::D, R = C::R>> {
         Relation::new(
             vec![self.dep(), other.dep()],
             Concat {

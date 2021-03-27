@@ -5,7 +5,6 @@ use crate::core::monoid::Monoid;
 use crate::core::{ContextId, CreationContext, ExecutionContext, Relation, Step};
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
-use std::marker::PhantomData;
 use std::mem;
 use std::rc::Rc;
 use std::{cell::RefCell, ptr};
@@ -101,7 +100,7 @@ impl<D: Key, R: Monoid> Op for InputCollection<D, R> {
 impl CreationContext {
     pub fn create_input<D: Key, R: Monoid>(
         &self,
-    ) -> (Input<D, R>, Relation<'static, impl Op<D = D, R = R>>) {
+    ) -> (Input<D, R>, Relation<impl Op<D = D, R = R>>) {
         let inner = Rc::new(RefCell::new(InputInner {
             pending_step: 0,
             adding_step: 0,
@@ -118,7 +117,6 @@ impl CreationContext {
                     .node_maker
                     .make_node(Vec::new(), InputCollection(Rc::clone(&inner))),
                 context_id: self.context_id,
-                phantom: PhantomData,
                 node_maker: self.node_maker.clone(),
             }
             .with_input(InputRef(inner)),

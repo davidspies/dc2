@@ -32,10 +32,10 @@ impl<D: Key, R: Monoid> Op for DynOp<D, R> {
     }
 }
 
-impl<'a, C: Op> Relation<'a, C> {
+impl<C: Op> Relation<C> {
     /// Throws out the implementation details in the template parameter, simplifying the
     /// type-signature at a cost of having to look them up at run-time.
-    pub fn dynamic(self) -> Relation<'a, DynOp<C::D, C::R>> {
+    pub fn dynamic(self) -> Relation<DynOp<C::D, C::R>> {
         Relation::new(vec![self.dep()], DynOp(Box::new(self.inner))).hidden()
     }
 }

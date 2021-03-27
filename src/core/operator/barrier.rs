@@ -37,14 +37,14 @@ impl<C: Op> Op for Barrier<C> {
     }
 }
 
-impl<'a, C: Op> Relation<'a, C> {
+impl<C: Op> Relation<C> {
     /// Checks to see if there have been any calls to `commit` since the last time the underlying
     /// relation was read
     /// before proceeding to propagate changes from the input. Note that this function is already
     /// called by `self.split()`. In general, the user should not need to call this
     /// explicitly (however there is an alias for this function: `relation.enter()` which should
     /// generally be used on inputs to subgraphs).
-    pub fn barrier(self) -> Relation<'a, Barrier<C>> {
+    pub fn barrier(self) -> Relation<Barrier<C>> {
         Relation::new(vec![self.dep()], Barrier::new(self.inner)).hidden()
     }
 }

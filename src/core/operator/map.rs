@@ -38,7 +38,7 @@ impl<
     }
 }
 
-impl<'a, C: Op> Relation<'a, C> {
+impl<C: Op> Relation<C> {
     pub fn flat_map_dr<
         F: Fn(C::D, C::R) -> I + 'static,
         D2: Key,
@@ -47,7 +47,7 @@ impl<'a, C: Op> Relation<'a, C> {
     >(
         self,
         f: F,
-    ) -> Relation<'a, impl Op<D = D2, R = R2>> {
+    ) -> Relation<impl Op<D = D2, R = R2>> {
         Relation::new(
             vec![self.dep()],
             FlatMap {
