@@ -18,6 +18,13 @@ impl<C: Op> Node<C> {
     pub(super) fn set_op_name(&mut self, name: String) {
         self.info.borrow_mut().set_op_name(name)
     }
+    pub(super) fn needs_update(&self, prev_step: Step, step: Step) -> bool {
+        self.info
+            .borrow()
+            .inputs
+            .iter()
+            .any(|inp| prev_step <= inp.latest_update(step))
+    }
     pub(super) fn flow<F: FnMut(C::D, C::R)>(&mut self, step: Step, mut send: F) {
         let Node { inner, info } = self;
         inner.flow(step, |x, r| {

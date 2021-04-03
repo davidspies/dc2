@@ -8,12 +8,9 @@ pub mod monoid;
 mod node;
 mod operator;
 
-pub use self::arrangement::Arrangement;
-pub use self::operator::{DynOp, Input, IsReduce, Op, Receiver, ReduceOutput};
-use self::{
-    node::{Node, NodeInfo, NodeMaker},
-    operator::InputRef,
-};
+pub use self::arrangement::{Arrangement, Inputs};
+use self::node::{Node, NodeInfo, NodeMaker};
+pub use self::operator::{DynOp, Input, InputRef, IsReduce, Op, Receiver, ReduceOutput};
 use std::{
     cell::RefCell,
     io::{self, Write},

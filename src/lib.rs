@@ -13,7 +13,7 @@ pub use self::convenience_operators::{
 };
 pub use self::core::{
     borrow, emptyable, key, monoid, Arrangement, CreationContext, DynOp, ExecutionContext, Input,
-    IsReduce, Op, Receiver, ReduceOutput, Relation,
+    InputRef, Inputs, IsReduce, Op, Receiver, ReduceOutput, Relation,
 };
 
 #[cfg(test)]

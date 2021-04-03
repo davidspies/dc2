@@ -10,8 +10,7 @@ mod split;
 mod triangles;
 
 pub use self::dynamic::DynOp;
-pub use self::input::Input;
-pub(super) use self::input::InputRef;
+pub use self::input::{Input, InputRef};
 pub use self::reduce::{IsReduce, ReduceOutput};
 pub use self::split::Receiver;
 use super::Step;

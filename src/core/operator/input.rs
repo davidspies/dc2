@@ -28,7 +28,7 @@ impl<D: Key, R: Monoid> IsInput for InputInner<D, R> {
 }
 
 #[derive(Clone)]
-pub(in crate::core) struct InputRef(Rc<RefCell<dyn IsInput>>);
+pub struct InputRef(Rc<RefCell<dyn IsInput>>);
 impl PartialEq for InputRef {
     fn eq(&self, other: &Self) -> bool {
         ptr::eq(self.0.as_ptr(), other.0.as_ptr())
@@ -60,6 +60,10 @@ impl<D: Key, R: Monoid> Input<D, R> {
         let mut inner_mut = self.inner.borrow_mut();
         inner_mut.resolve(context.step);
         inner_mut.adding.add(x, r);
+    }
+    pub fn get_id(&self) -> InputRef {
+        let pt = Rc::clone(&self.inner);
+        InputRef(pt)
     }
 }
 impl<D: Key, R: Monoid> InputInner<D, R> {

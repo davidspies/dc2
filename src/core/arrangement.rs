@@ -1,9 +1,9 @@
 use super::{ContextId, CreationContext, ExecutionContext, Relation};
 use crate::core::is_map::IsAddMap;
-use crate::core::node::Node;
-use crate::core::operator::{DynOp, Op};
+use crate::core::node::{Node, NodeInfo};
+use crate::core::operator::{DynOp, InputRef, Op};
 use std::cell::{Ref, RefCell};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 pub struct Arrangement<
@@ -31,6 +31,17 @@ impl<C: Op, M: IsAddMap<C::D, C::R>> Arrangement<C::D, C::R, M, C> {
         self.inner.borrow_mut().flow(context.step);
         Ref::map(self.inner.borrow(), |i| &i.value)
     }
+    pub fn get_inputs(&self) -> Inputs {
+        Inputs(Rc::clone(&self.inner.borrow().from.info))
+    }
+}
+
+pub struct Inputs(Rc<RefCell<NodeInfo>>);
+
+impl Inputs {
+    pub fn borrow(&self) -> Ref<HashSet<InputRef>> {
+        Ref::map(self.0.borrow(), |x| &x.inputs)
+    }
 }
 
 struct ArrangementInner<D, R, M: IsAddMap<D, R>, C: Op<D = D, R = R>> {
@@ -46,7 +57,7 @@ impl<C: Op, M: IsAddMap<C::D, C::R>> ArrangementInner<C::D, C::R, M, C> {
             ref mut value,
             step: ref mut cur_step,
         } = self;
-        if *cur_step < step {
+        if from.needs_update(*cur_step, step) {
             *cur_step = step;
             from.flow(step, |x, r| value.add(x, r));
         }
