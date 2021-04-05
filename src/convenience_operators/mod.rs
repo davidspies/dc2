@@ -19,8 +19,7 @@ pub type OrderedArrangement<K, V, R = isize> = Arrangement<(K, V), R, BTreeMap<K
 pub type MappingArrangement<K, V> = Box<dyn ReduceOutput<K = K, M = SingletonMap<V>>>;
 
 impl<C: Op> Relation<C> {
-    pub fn get_dyn_arrangement(self, context: &CreationContext) -> Arrangement<C::D, C::R>
-where {
+    pub fn get_dyn_arrangement(self, context: &CreationContext) -> Arrangement<C::D, C::R> {
         self.dynamic().get_arrangement(context)
     }
     /// Convenience function equivalent to `self.dynamic().split()`.
