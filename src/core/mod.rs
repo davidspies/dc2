@@ -8,7 +8,7 @@ pub mod monoid;
 mod node;
 mod operator;
 
-pub use self::arrangement::{Arrangement, Inputs};
+pub use self::arrangement::{Arrangement, ArrangementG, Inputs};
 use self::node::{Node, NodeInfo, NodeMaker};
 pub use self::operator::{DynOp, Input, InputRef, IsReduce, Op, Receiver, ReduceOutput};
 use std::{

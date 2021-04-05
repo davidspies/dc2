@@ -1,12 +1,12 @@
 use crate::{
     map::{IsAddMap, IsMap},
-    Arrangement, CreationContext, ExecutionContext, Input, Op,
+    ArrangementG, CreationContext, ExecutionContext, Input, Op,
 };
 use std::collections::HashMap;
 
 #[must_use = "This connection will be ignored unless it is handed off to a begin_feedback call"]
 pub struct LeafConnection<C: Op, M: IsAddMap<C::D, C::R>> {
-    from: Arrangement<C::D, C::R, M, C>,
+    from: ArrangementG<C, M>,
     to: Input<C::D, C::R>,
 }
 
@@ -42,7 +42,7 @@ pub trait IsArrangement {
     fn is_empty(&self, context: &ExecutionContext) -> bool;
 }
 
-impl<M: IsAddMap<C::D, C::R>, C: Op> IsArrangement for Arrangement<C::D, C::R, M, C> {
+impl<M: IsAddMap<C::D, C::R>, C: Op> IsArrangement for ArrangementG<C, M> {
     fn is_empty(&self, context: &ExecutionContext) -> bool {
         self.read(context).is_empty()
     }
@@ -147,7 +147,7 @@ impl IsConnection for Connection {
     }
 }
 
-impl<C: Op, M: IsAddMap<C::D, C::R>> Arrangement<C::D, C::R, M, C> {
+impl<C: Op, M: IsAddMap<C::D, C::R>> ArrangementG<C, M> {
     pub fn feedback_gen(self, inp: Input<C::D, C::R>) -> LeafConnection<C, M> {
         LeafConnection {
             from: self,
@@ -156,7 +156,7 @@ impl<C: Op, M: IsAddMap<C::D, C::R>> Arrangement<C::D, C::R, M, C> {
     }
 }
 
-impl<C: Op> Arrangement<C::D, C::R, HashMap<C::D, C::R>, C> {
+impl<C: Op> ArrangementG<C, HashMap<C::D, C::R>> {
     pub fn feedback(self, inp: Input<C::D, C::R>) -> LeafConnection<C, HashMap<C::D, C::R>> {
         self.feedback_gen(inp)
     }
@@ -208,7 +208,7 @@ impl FeedbackContext {
     }
 }
 
-impl<M: IsAddMap<C::D, C::R> + 'static, C: Op> Arrangement<C::D, C::R, M, C> {
+impl<M: IsAddMap<C::D, C::R> + 'static, C: Op> ArrangementG<C, M> {
     pub fn interrupt(&self) -> InterConnection {
         InterConnection::Interrupt(Box::new(self.clone()))
     }
