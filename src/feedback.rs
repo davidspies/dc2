@@ -167,6 +167,24 @@ pub struct FeedbackContext {
     connection: Connection,
 }
 
+pub struct FeedbackContextRef<'a> {
+    context: &'a mut ExecutionContext,
+    connection: &'a Connection,
+}
+
+pub trait IsFeedbackContext {
+    fn get(&self) -> &ExecutionContext;
+    fn commit(&mut self);
+    fn with_temp_changes<
+        Changes: for<'a> FnOnce(FeedbackContextRef<'a>),
+        Cont: for<'a> FnOnce(FeedbackContextRef<'a>),
+    >(
+        &mut self,
+        changes: Changes,
+        cont: Cont,
+    );
+}
+
 impl CreationContext {
     pub fn begin_feedback<C: IsConnection>(self, connection: C) -> FeedbackContext {
         let context = self.begin();
@@ -178,10 +196,38 @@ impl CreationContext {
 }
 
 impl FeedbackContext {
-    pub fn get(&self) -> &ExecutionContext {
+    fn as_ref(&mut self) -> FeedbackContextRef {
+        FeedbackContextRef {
+            context: &mut self.context,
+            connection: &self.connection,
+        }
+    }
+}
+
+impl IsFeedbackContext for FeedbackContext {
+    fn get(&self) -> &ExecutionContext {
         &self.context
     }
-    pub fn commit(&mut self) {
+    fn commit(&mut self) {
+        self.as_ref().commit()
+    }
+    fn with_temp_changes<
+        Changes: for<'a> FnOnce(FeedbackContextRef<'a>),
+        Cont: for<'a> FnOnce(FeedbackContextRef<'a>),
+    >(
+        &mut self,
+        changes: Changes,
+        cont: Cont,
+    ) {
+        self.as_ref().with_temp_changes(changes, cont)
+    }
+}
+
+impl IsFeedbackContext for FeedbackContextRef<'_> {
+    fn get(&self) -> &ExecutionContext {
+        self.context
+    }
+    fn commit(&mut self) {
         self.context.commit();
         'outer: loop {
             for inter in self.connection.0.iter() {
@@ -205,6 +251,43 @@ impl FeedbackContext {
             }
             break;
         }
+    }
+    fn with_temp_changes<
+        Changes: for<'a> FnOnce(FeedbackContextRef<'a>),
+        Cont: for<'a> FnOnce(FeedbackContextRef<'a>),
+    >(
+        &mut self,
+        changes: Changes,
+        cont: Cont,
+    ) {
+        let FeedbackContextRef {
+            context,
+            connection,
+        } = self;
+        context.with_temp_changes(
+            |context| {
+                changes(FeedbackContextRef {
+                    context,
+                    connection,
+                });
+                FeedbackContextRef {
+                    context,
+                    connection,
+                }
+                .commit();
+            },
+            |context| {
+                cont(FeedbackContextRef {
+                    context,
+                    connection,
+                });
+                FeedbackContextRef {
+                    context,
+                    connection,
+                }
+                .commit();
+            },
+        );
     }
 }
 
