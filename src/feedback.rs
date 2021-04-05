@@ -1,11 +1,12 @@
 use crate::{
-    core::Relation, map::IsAddMap, Arrangement, CreationContext, ExecutionContext, Input, Op,
+    map::{IsAddMap, IsMap},
+    Arrangement, CreationContext, ExecutionContext, Input, Op,
 };
 use std::collections::HashMap;
 
 #[must_use = "This connection will be ignored unless it is handed off to a begin_feedback call"]
-pub struct LeafConnection<C: Op> {
-    from: Arrangement<C::D, C::R, HashMap<C::D, C::R>, C>,
+pub struct LeafConnection<C: Op, M: IsAddMap<C::D, C::R>> {
+    from: Arrangement<C::D, C::R, M, C>,
     to: Input<C::D, C::R>,
 }
 
@@ -13,15 +14,15 @@ trait IsLeafConnection {
     fn feed(&self, context: &ExecutionContext) -> bool;
 }
 
-impl<C: Op> IsLeafConnection for LeafConnection<C> {
+impl<C: Op, M: IsMap<C::D, C::R> + IsAddMap<C::D, C::R>> IsLeafConnection for LeafConnection<C, M> {
     fn feed(&self, context: &ExecutionContext) -> bool {
         let out_map = self.from.read(context);
         if out_map.is_empty() {
             false
         } else {
-            for (x, r) in self.from.read(context).iter() {
+            out_map.foreach(|x, r| {
                 self.to.update(context, x.clone(), r.clone());
-            }
+            });
             true
         }
     }
@@ -74,7 +75,9 @@ pub fn together_with<Lhs: IsSimulConnection, Rhs: IsSimulConnection>(
         .together_with(rhs.to_simul_connection())
 }
 
-impl<C: Op> IsSimulConnection for LeafConnection<C> {
+impl<C: Op, M: IsMap<C::D, C::R> + IsAddMap<C::D, C::R> + 'static> IsSimulConnection
+    for LeafConnection<C, M>
+{
     fn to_simul_connection(self) -> SimulConnection {
         SimulConnection(vec![Box::new(self)])
     }
@@ -90,7 +93,9 @@ pub trait IsInterConnection: IsConnection {
     fn to_inter_connection(self) -> InterConnection;
 }
 
-impl<C: Op> IsInterConnection for LeafConnection<C> {
+impl<C: Op, M: IsMap<C::D, C::R> + IsAddMap<C::D, C::R> + 'static> IsInterConnection
+    for LeafConnection<C, M>
+{
     fn to_inter_connection(self) -> InterConnection {
         self.to_simul_connection().to_inter_connection()
     }
@@ -116,7 +121,9 @@ pub fn and_then<Lhs: IsConnection, Rhs: IsConnection>(lhs: Lhs, rhs: Rhs) -> Con
     lhs.to_connection().and_then(rhs.to_connection())
 }
 
-impl<C: Op> IsConnection for LeafConnection<C> {
+impl<C: Op, M: IsMap<C::D, C::R> + IsAddMap<C::D, C::R> + 'static> IsConnection
+    for LeafConnection<C, M>
+{
     fn to_connection(self) -> Connection {
         self.to_simul_connection().to_connection()
     }
@@ -140,12 +147,18 @@ impl IsConnection for Connection {
     }
 }
 
-impl<C: Op> Relation<C> {
-    pub fn feedback(self, inp: Input<C::D, C::R>, context: &CreationContext) -> LeafConnection<C> {
+impl<C: Op, M: IsAddMap<C::D, C::R>> Arrangement<C::D, C::R, M, C> {
+    pub fn feedback_gen(self, inp: Input<C::D, C::R>) -> LeafConnection<C, M> {
         LeafConnection {
-            from: self.get_arrangement(context),
+            from: self,
             to: inp,
         }
+    }
+}
+
+impl<C: Op> Arrangement<C::D, C::R, HashMap<C::D, C::R>, C> {
+    pub fn feedback(self, inp: Input<C::D, C::R>) -> LeafConnection<C, HashMap<C::D, C::R>> {
+        self.feedback_gen(inp)
     }
 }
 
