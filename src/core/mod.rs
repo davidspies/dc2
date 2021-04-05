@@ -13,6 +13,7 @@ use self::node::{Node, NodeInfo, NodeMaker};
 pub use self::operator::{DynOp, Input, InputRef, IsReduce, Op, Receiver, ReduceOutput};
 use std::{
     cell::RefCell,
+    collections::{HashMap, HashSet},
     io::{self, Write},
     mem,
     rc::Rc,
@@ -42,10 +43,14 @@ impl CreationContext {
     }
 }
 
+type TrackedId = usize;
+
 pub struct ExecutionContext {
     step: usize,
     context_id: ContextId,
     infos: Vec<Rc<RefCell<NodeInfo>>>,
+    tracking_id: Option<TrackedId>,
+    tracked: RefCell<HashMap<TrackedId, HashSet<InputRef>>>,
 }
 
 impl CreationContext {
@@ -55,6 +60,8 @@ impl CreationContext {
             step: 0,
             context_id: self.context_id,
             infos,
+            tracking_id: None,
+            tracked: RefCell::new(HashMap::new()),
         }
     }
 }
@@ -97,6 +104,29 @@ impl ExecutionContext {
             }
         }
         writeln!(file, "}}")
+    }
+    pub fn with_temp_changes<Changes: FnOnce(&mut Self), Cont: FnOnce(&mut Self)>(
+        &mut self,
+        changes: Changes,
+        cont: Cont,
+    ) {
+        self.commit();
+        let tracking_id = self.step;
+        let prev_tracking_id = self.tracking_id;
+        self.tracking_id = Some(tracking_id);
+        changes(self);
+        self.tracking_id = prev_tracking_id;
+        self.commit();
+        cont(self);
+        for inp in self
+            .tracked
+            .borrow_mut()
+            .remove(&tracking_id)
+            .unwrap_or_default()
+        {
+            inp.undo_changes(self.step, tracking_id);
+        }
+        self.commit();
     }
 }
 
