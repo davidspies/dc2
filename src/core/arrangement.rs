@@ -1,9 +1,9 @@
 use super::{ContextId, CreationContext, ExecutionContext, Relation};
 use crate::core::is_map::IsAddMap;
-use crate::core::node::{Node, NodeInfo};
-use crate::core::operator::{DynOp, InputRef, Op};
+use crate::core::node::Node;
+use crate::core::operator::{DynOp, Op};
 use std::cell::{Ref, RefCell};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::rc::Rc;
 
 pub struct ArrangementG<C: Op, M = HashMap<<C as Op>::D, <C as Op>::R>> {
@@ -27,17 +27,6 @@ impl<C: Op, M: IsAddMap<C::D, C::R>> ArrangementG<C, M> {
         assert_eq!(self.context_id, context.context_id, "Context mismatch");
         self.inner.borrow_mut().flow(context.step);
         Ref::map(self.inner.borrow(), |i| &i.value)
-    }
-    pub fn get_inputs(&self) -> Inputs {
-        Inputs(Rc::clone(&self.inner.borrow().from.info))
-    }
-}
-
-pub struct Inputs(Rc<RefCell<NodeInfo>>);
-
-impl Inputs {
-    pub fn borrow(&self) -> Ref<HashSet<InputRef>> {
-        Ref::map(self.0.borrow(), |x| &x.inputs)
     }
 }
 

@@ -8,9 +8,10 @@ pub mod monoid;
 mod node;
 mod operator;
 
-pub use self::arrangement::{Arrangement, ArrangementG, Inputs};
+pub use self::arrangement::{Arrangement, ArrangementG};
 use self::node::{Node, NodeInfo, NodeMaker};
-pub use self::operator::{DynOp, Input, InputRef, IsReduce, Op, Receiver, ReduceOutput};
+use self::operator::InputRef;
+pub use self::operator::{DynOp, Input, IsReduce, Op, Receiver, ReduceOutput};
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
