@@ -19,16 +19,16 @@ use std::{
     mem,
     rc::Rc,
     sync::atomic,
-    sync::atomic::AtomicUsize,
+    sync::atomic::AtomicU64,
 };
 
-static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
+static NEXT_ID: AtomicU64 = AtomicU64::new(0);
 
 fn next_id() -> ContextId {
     NEXT_ID.fetch_add(1, atomic::Ordering::SeqCst)
 }
 
-type ContextId = usize;
+type ContextId = u64;
 
 pub struct CreationContext {
     context_id: ContextId,
@@ -141,7 +141,7 @@ pub struct Relation<C: ?Sized> {
 }
 
 struct Dep {
-    context_id: usize,
+    context_id: ContextId,
     node_info: Rc<RefCell<NodeInfo>>,
     node_maker: NodeMaker,
 }
