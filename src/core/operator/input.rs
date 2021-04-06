@@ -12,8 +12,8 @@ use std::{
 };
 
 struct InputInner<D, R> {
-    pending_step: usize,
-    adding_step: usize,
+    pending_step: Step,
+    adding_step: Step,
     pending: HashMap<D, R>,
     adding: HashMap<D, R>,
     tracked: HashMap<TrackedId, HashMap<D, R>>,
@@ -90,7 +90,7 @@ impl<D: Key, R: Monoid> Input<D, R> {
     }
 }
 impl<D: Key, R: Monoid> InputInner<D, R> {
-    fn resolve(&mut self, step: usize) {
+    fn resolve(&mut self, step: Step) {
         assert!(self.adding_step <= step);
         if self.adding_step < step {
             if !self.adding.is_empty() {

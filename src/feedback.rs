@@ -260,6 +260,7 @@ impl IsFeedbackContext for FeedbackContextRef<'_> {
         changes: Changes,
         cont: Cont,
     ) {
+        self.commit();
         let FeedbackContextRef {
             context,
             connection,

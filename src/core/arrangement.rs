@@ -1,4 +1,4 @@
-use super::{ContextId, CreationContext, ExecutionContext, Relation};
+use super::{ContextId, CreationContext, ExecutionContext, Relation, Step};
 use crate::core::is_map::IsAddMap;
 use crate::core::node::Node;
 use crate::core::operator::{DynOp, Op};
@@ -33,11 +33,11 @@ impl<C: Op, M: IsAddMap<C::D, C::R>> ArrangementG<C, M> {
 struct ArrangementInner<C: Op, M> {
     from: Node<C>,
     value: M,
-    step: usize,
+    step: Step,
 }
 
 impl<C: Op, M: IsAddMap<C::D, C::R>> ArrangementInner<C, M> {
-    fn flow(&mut self, step: usize) {
+    fn flow(&mut self, step: Step) {
         let ArrangementInner {
             ref mut from,
             ref mut value,

@@ -4,7 +4,7 @@ use crate::core::{Relation, Step};
 
 pub struct Barrier<C> {
     pub(super) inner: Node<C>,
-    step: usize,
+    step: Step,
 }
 
 impl<C: Op> Barrier<C> {

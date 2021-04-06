@@ -44,10 +44,10 @@ impl CreationContext {
     }
 }
 
-type TrackedId = usize;
+type TrackedId = Step;
 
 pub struct ExecutionContext {
-    step: usize,
+    step: Step,
     context_id: ContextId,
     infos: Vec<Rc<RefCell<NodeInfo>>>,
     tracking_id: Option<TrackedId>,
@@ -131,7 +131,7 @@ impl ExecutionContext {
     }
 }
 
-type Step = usize;
+type Step = u64;
 
 #[derive(Clone)]
 pub struct Relation<C: ?Sized> {
