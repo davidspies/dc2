@@ -117,22 +117,16 @@ fn intersection<K: Clone + Eq + Hash, V1: Clone, V2: Clone>(
 ) -> HashMap<K, (V1, V2)> {
     if r.len() < l.len() {
         r.iter()
-            .flat_map(|(k, v2)| {
-                if let Some(v1) = l.get(k) {
-                    Some((k.clone(), (v1.clone(), v2.clone())))
-                } else {
-                    None
-                }
+            .flat_map(|(k, v2)| match l.get(k) {
+                Some(v1) => Some((k.clone(), (v1.clone(), v2.clone()))),
+                None => None,
             })
             .collect()
     } else {
         l.iter()
-            .flat_map(|(k, v1)| {
-                if let Some(v2) = r.get(k) {
-                    Some((k.clone(), (v1.clone(), v2.clone())))
-                } else {
-                    None
-                }
+            .flat_map(|(k, v1)| match r.get(k) {
+                Some(v2) => Some((k.clone(), (v1.clone(), v2.clone()))),
+                None => None,
             })
             .collect()
     }

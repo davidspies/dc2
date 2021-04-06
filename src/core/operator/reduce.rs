@@ -48,13 +48,10 @@ impl<
         });
         for k in changed_keys {
             let old_map = match self.input_maps.get(&k) {
-                None => {
-                    if let Some(om) = self.output_maps.remove(&k) {
-                        om.into_discardable()
-                    } else {
-                        M2::Discardable::default()
-                    }
-                }
+                None => match self.output_maps.remove(&k) {
+                    Some(om) => om.into_discardable(),
+                    None => M2::Discardable::default(),
+                },
                 Some(im) => {
                     let new_map = (self.proc)(&k, im);
                     let e = self.output_maps.entry(k.clone());

@@ -78,10 +78,11 @@ impl ExecutionContext {
             if !info.shown {
                 continue;
             }
-            let name = if let Some(name) = info.name.as_ref() {
-                format!("{} <br/>", name)
-            } else {
-                "".to_string()
+            let name = match info.name.as_ref() {
+                Some(name) => {
+                    format!("{} <br/>", name)
+                }
+                None => "".to_string(),
             };
             writeln!(
                 file,

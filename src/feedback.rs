@@ -49,11 +49,12 @@ impl<K: Key + Ord, V: Key, C: Op<D = (K, V)>, M: IsMap<V, C::R> + IsAddMap<V, C:
 {
     fn feed(&self, context: &ExecutionContext) -> bool {
         let out_map = self.from.read(context);
-        if let Some((k, m)) = out_map.first_key_value() {
-            m.foreach(|x, r| self.to.update(context, (k.clone(), x.clone()), r.clone()));
-            true
-        } else {
-            false
+        match out_map.first_key_value() {
+            Some((k, m)) => {
+                m.foreach(|x, r| self.to.update(context, (k.clone(), x.clone()), r.clone()));
+                true
+            }
+            None => false,
         }
     }
 }
