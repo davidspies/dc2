@@ -12,8 +12,10 @@ pub use self::convenience_operators::{
     Collection, DynReceiver, MapMapArrangement, MappingArrangement, OrderedArrangement,
 };
 pub use self::core::{
-    borrow, emptyable, key, monoid, Arrangement, ArrangementG, CreationContext, DynOp,
-    ExecutionContext, Input, IsReduce, Op, Receiver, ReduceOutput, Relation,
+    borrow,
+    context::{CreationContext, ExecutionContext},
+    emptyable, key, monoid, Arrangement, ArrangementG, DynOp, Input, IsReduce, Op, Receiver,
+    ReduceOutput, Relation,
 };
 
 #[cfg(test)]

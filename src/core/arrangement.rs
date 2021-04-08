@@ -1,4 +1,8 @@
-use super::{ContextId, CreationContext, ExecutionContext, Relation, Step};
+use super::{
+    context::{ContextId, CreationContext, ExecutionContext},
+    relation::Relation,
+    Step,
+};
 use crate::core::is_map::IsAddMap;
 use crate::core::node::Node;
 use crate::core::operator::{DynOp, Op};

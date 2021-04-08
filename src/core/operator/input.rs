@@ -2,7 +2,10 @@ use super::Op;
 use crate::core::is_map::IsAddMap;
 use crate::core::key::Key;
 use crate::core::monoid::Monoid;
-use crate::core::{ContextId, CreationContext, ExecutionContext, Relation, Step, TrackedId};
+use crate::core::{
+    context::{ContextId, CreationContext, ExecutionContext},
+    Relation, Step, TrackedId,
+};
 use std::{
     cell::RefCell,
     collections::HashMap,
